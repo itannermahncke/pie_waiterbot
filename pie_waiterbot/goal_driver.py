@@ -12,7 +12,7 @@ from tf_transformations import euler_from_quaternion
 import math
 
 
-class GoalAchievementNode(Node):
+class GoalDriverNode(Node):
     """
     Given a pose estimate, compare the robot pose to the known location of
     AprilTags, knowing both are in the world frame. Calculate robot Twist
@@ -21,9 +21,9 @@ class GoalAchievementNode(Node):
 
     def __init__(self):
         """
-        Initialize an instance of the GoalAchievementNode class.
+        Initialize an instance of the GoalDriverNode class.
         """
-        super().__init__("goal_achievement")
+        super().__init__("goal_driver")
 
         self.speed_interval = self.create_timer(0.1, self.publish_vel)
 
@@ -76,7 +76,7 @@ class GoalAchievementNode(Node):
         """
         Calculate error between current heading and ideal heading to approach AprilTag.
         """
-        goal_xy = apriltag_poses
+        goal_xy = apriltag_poses[self.latest_goal_id]
         delta_x = goal_xy[0] - self.latest_coords[0]
         delta_y = goal_xy[1] - self.latest_coords[1]
         lin_error = math.sqrt(delta_x**2 + delta_y**2)
@@ -86,9 +86,9 @@ class GoalAchievementNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    goal_achievement = GoalAchievementNode()
-    rclpy.spin(goal_achievement)
-    goal_achievement.destroy_node()
+    goal_driver = GoalDriverNode()
+    rclpy.spin(goal_driver)
+    goal_driver.destroy_node()
     rclpy.shutdown()
 
 
