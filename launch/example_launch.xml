@@ -1,0 +1,18 @@
+<launch>
+  <!--If running robot in teleoperated mode-->
+  <node pkg="pie_waiterbot" exec="teleop_node", name="teleop"/>
+
+  <!--If communicating with microcontrollers serially-->
+  <node pkg="pie_waiterbot" exec="serial_adapter", name="serial">
+    <param name="serial_port" value="/dev/ttyACM0"/>
+  </node>
+
+  <!--AprilTag reference map-->
+  <param name="apriltags" value="[test1, test2, test3]"/>
+  <param name="test1_translation" value="[0.0, 0.0, 0.0]"/>
+  <param name="test1_rotation" value="[0.0, 0.0, 0.0]"/>
+  <param name="test2_translation" value="[10.0, 0.0, 0.0]"/>
+  <param name="test2_rotation" value="[0.0, 0.0, 0.0]"/>
+  <param name="test3_translation" value="[10.0, 10.0, 0.0]"/>
+  <param name="test3_rotation" value="[0.0, 0.0, 0.0]"/>
+</launch>
