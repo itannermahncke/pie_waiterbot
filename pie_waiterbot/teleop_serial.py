@@ -80,7 +80,7 @@ class TeleopSerialNode(Node):
 
         # publish Twist
         self.cmd_publisher.publish(twist_msg)
-        serial_line = (f"{twist_msg.linear.x}, {twist_msg.angular.z}")
+        serial_line = str.encode(f"{twist_msg.linear.x}, {twist_msg.angular.z}")
         self.port.write(serial_line)
 
     def get_key(self):
