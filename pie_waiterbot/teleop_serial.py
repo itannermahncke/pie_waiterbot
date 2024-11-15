@@ -37,7 +37,7 @@ class TeleopSerialNode(Node):
         self.ang = 0.2
 
         # attributes
-        arduinoComPort = "dev/ttyACM0"
+        arduinoComPort = "/dev/ttyACM0"
         baudRate = 9600
         self.port = serial.Serial(arduinoComPort, baudRate, timeout=1)
 
