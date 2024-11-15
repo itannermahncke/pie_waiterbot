@@ -33,8 +33,8 @@ class TeleopSerialNode(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         # standard velocities
-        self.lin = 0.1
-        self.ang = 0.2
+        self.lin = 0.45
+        self.ang = 0.4
 
         # attributes
         arduinoComPort = "/dev/ttyACM0"
