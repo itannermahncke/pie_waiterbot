@@ -19,8 +19,8 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "motor_controller = pie_waiterbot.motor_controller:main",
-            "apriltag = pie_waiterbot.apriltag:main",
+            "teleop = pie_waiterbot.teleop:main",
+            "serial_adapter = pie_waiterbot.serial_adapter:main",
         ],
     },
 )
