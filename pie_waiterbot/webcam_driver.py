@@ -6,9 +6,9 @@ from apriltag_msgs.msg import AprilTagDetectionArray
 import cv2
 
 
-class ImageSubscriber(Node):
+class WebcamDriver(Node):
     def __init__(self):
-        super().__init__("image_subscriber")
+        super().__init__("webcam_driver")
         self.br = CvBridge()
         self.current_frame = None
         self.x = None
@@ -58,9 +58,9 @@ class ImageSubscriber(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    image_subscriber = ImageSubscriber()
-    rclpy.spin(image_subscriber)
-    image_subscriber.destroy_node()
+    webcam_driver = WebcamDriver()
+    rclpy.spin(webcam_driver)
+    webcam_driver.destroy_node()
     rclpy.shutdown()
 
 

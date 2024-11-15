@@ -22,6 +22,9 @@ setup(
             "teleop = pie_waiterbot.teleop:main",
             "serial_adapter = pie_waiterbot.serial_adapter:main",
             "teleop_serial = pie_waiterbot.teleop_serial:main",
+            "goal_driver = pie_waiterbot.goal_driver:main",
+            "pose_estimation = pie_waiterbot.pose_estimation:main",
+            "webcam_driver = pie_waiterbot.webcam_driver:main",
         ],
     },
 )
