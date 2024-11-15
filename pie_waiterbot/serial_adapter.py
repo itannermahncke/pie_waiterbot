@@ -22,7 +22,7 @@ class SerialAdapterNode(Node):
         )
 
         # attributes
-        arduinoComPort = "/dev/ttyACM0"
+        arduinoComPort = self.get_parameter("serial_port")
         baudRate = 9600
         self.port = serial.Serial(arduinoComPort, baudRate, timeout=1)
 

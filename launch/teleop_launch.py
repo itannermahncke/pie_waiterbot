@@ -7,11 +7,12 @@ def generate_launch_description():
         [
             Node(
                 package="pie_waiterbot",
-                executable="teleop",
-            ),
-            Node(
-                package="pie_waiterbot",
-                executable="serial_adapter",
+                executable="teleop_serial",
+                parameters=[
+                    {
+                        "serial_port": "/dev/ttyACM0",
+                    }
+                ],
             ),
         ]
     )
