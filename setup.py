@@ -21,6 +21,7 @@ setup(
         "console_scripts": [
             "teleop = pie_waiterbot.teleop:main",
             "serial_adapter = pie_waiterbot.serial_adapter:main",
+            "teleop_serial = pie_waiterbot.teleop_serial:main",
         ],
     },
 )
