@@ -54,21 +54,21 @@ class TeleopSerialNode(Node):
 
         # build message by key
         match current_key:
-            case "k":
-                twist_msg.linear.x = self.lin
             case "i":
+                twist_msg.linear.x = self.lin
+            case "k":
                 twist_msg.linear.x = 0.0
                 twist_msg.angular.z = 0.0
             case ",":
                 twist_msg.linear.x = self.lin * -1
-            case "u":
-                twist_msg.angular.z = self.ang
-            case "o":
-                twist_msg.angular.z = self.ang * -1
             case "j":
-                twist_msg.linear.x = self.lin
                 twist_msg.angular.z = self.ang
             case "l":
+                twist_msg.angular.z = self.ang * -1
+            case "u":
+                twist_msg.linear.x = self.lin
+                twist_msg.angular.z = self.ang
+            case "o":
                 twist_msg.linear.x = self.lin
                 twist_msg.angular.z = self.ang * -1
             case "m":
