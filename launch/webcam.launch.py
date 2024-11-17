@@ -1,6 +1,7 @@
+from launch_ros.actions import Node
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
-from launch_ros.actions import Node
+from launch.launch_description_sources import AnyLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 
 import os
@@ -8,7 +9,12 @@ import os
 
 def generate_launch_description():
     apriltag_ros = IncludeLaunchDescription(
-        package="apriltag_ros", launch="launch/v4l2_36h11.launch.yml"
+        AnyLaunchDescriptionSource(
+            [
+                os.path.join(get_package_share_directory("apriltag_ros"), "launch"),
+                "/v4l2_36h11.launch.yml",
+            ]
+        )
     )
 
     apriltag_poses = os.path.join(
@@ -25,6 +31,7 @@ def generate_launch_description():
             Node(
                 package="pie_waiterbot",
                 executable="pose_estimation",
+                parameters=[apriltag_poses],
             ),
             Node(
                 package="pie_waiterbot",

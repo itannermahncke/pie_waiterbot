@@ -1,4 +1,4 @@
-goal_driver:
+/**:
   ros__parameters:
     apriltag_ids: ['test1']
     test1_translation: [0.0, 0.0, 0.0]
