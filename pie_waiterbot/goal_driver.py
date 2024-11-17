@@ -1,7 +1,8 @@
 import rclpy
 from rclpy.node import Node
 
-from constants import apriltag_id_names, apriltag_poses
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
 
 from std_msgs.msg import String
 from geometry_msgs.msg import Pose
@@ -23,9 +24,17 @@ class GoalDriverNode(Node):
         """
         Initialize an instance of the GoalDriverNode class.
         """
-        super().__init__("goal_driver")
+        super().__init__("goal_driver", allow_undeclared_parameters=True)
 
-        self.speed_interval = self.create_timer(0.1, self.publish_vel)
+        # apriltag pose management
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        # parameters
+        self.declare_parameter("apriltag_ids", rclpy.Parameter.Type.STRING_ARRAY)
+        self.apriltag_id_list = (
+            self.get_parameter("apriltag_ids").get_parameter_value().string_array_value
+        )
 
         # subscribers
         self.goal_subscriber = self.create_subscription(
@@ -36,10 +45,11 @@ class GoalDriverNode(Node):
         )
 
         # publishers
+        self.speed_interval = self.create_timer(0.1, self.publish_vel)
         self.speeds_publisher = self.create_publisher(Twist, "cmd_vel", 10)
 
         # attributes
-        self.latest_goal_id = apriltag_id_names["Kitchen"]
+        self.latest_goal_id = None
         self.latest_coords = (0.0, 0.0, 0.0)  # x, y, theta
         self.ang_K = 0.1
         self.lin_K = 0.1
@@ -49,7 +59,7 @@ class GoalDriverNode(Node):
         Callback function when a button press indicates that the robot has a
         new goal AprilTag to navigate towards.
         """
-        if goal_id.data in apriltag_id_names.keys():
+        if goal_id.data in self.apriltag_id_list:
             self.latest_goal_id = goal_id.data
         else:
             print(f"ERROR: ID {goal_id.data} NOT FOUND IN KNOWN ID LIST.")
@@ -67,16 +77,19 @@ class GoalDriverNode(Node):
         Calculate wheel speeds and publish to a topic accessible to the microcontroller.
         """
         twist = Twist()
-        error = self.calculate_error()
-        twist.linear = error[0]
-        twist.angular = error[1]
-        self.speeds_publisher.publish(twist)
+        if self.latest_goal_id is None:
+            print("No goal yet")
+        else:
+            error = self.calculate_error()
+            twist.linear = error[0]
+            twist.angular = error[1]
+            self.speeds_publisher.publish(twist)
 
     def calculate_error(self):
         """
         Calculate error between current heading and ideal heading to approach AprilTag.
         """
-        goal_xy = apriltag_poses[self.latest_goal_id]
+        goal_xy = self.tf_buffer.lookup_transform(self.latest_goal_id, "1")
         delta_x = goal_xy[0] - self.latest_coords[0]
         delta_y = goal_xy[1] - self.latest_coords[1]
         lin_error = math.sqrt(delta_x**2 + delta_y**2)

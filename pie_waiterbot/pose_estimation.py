@@ -1,18 +1,17 @@
 import rclpy
 from rclpy.node import Node
 
-import constants
-
 import apriltag
 
 from std_msgs.msg import Header
 from tf2_msgs.msg import TFMessage
-from geometry_msgs.msg import Transform, TransformStamped, Pose
+from geometry_msgs.msg import Transform, Quaternion, TransformStamped, Pose, Vector3
 from apriltag_msgs.msg import AprilTagDetection, AprilTagDetectionArray
 
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
+import tf_transformations as tf
 
 
 class PoseEstimationNode(Node):
@@ -27,11 +26,16 @@ class PoseEstimationNode(Node):
         """
         Initialize an instance of the PoseEstimationNode.
         """
-        super().__init__("pose_estimation")
+        super().__init__("pose_estimation", allow_undeclared_parameters=True)
 
         # transformation management
         self.tf_static_broadcaster = StaticTransformBroadcaster(self)
-        self.tf_listener = TransformListener(self)
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.declare_parameter("apriltag_ids", rclpy.Parameter.Type.STRING_ARRAY)
+        self.apriltag_list = (
+            self.get_parameter("apriltag_ids").get_parameter_value().string_array_value
+        )
         self.make_apriltag_transformations()
 
         # subscribers
@@ -50,40 +54,76 @@ class PoseEstimationNode(Node):
         Define all of the static transformations between each AprilTag and the
         world coordinate frame.
         """
-        apriltags = self.get_parameter("apriltags")
-        for apriltag_id in apriltags:
-            translation = self.get_parameter(f"{apriltag_id}_translation")
-            rotation = self.get_parameter(f"{apriltag_id}_rotation")
-            tf = self.make_static_transform(apriltag_id, translation, rotation)
-            self.tf_static_broadcaster.sendTransform(tf)
+        for apriltag_id in self.apriltag_list:
+            # declare parameters
+            self.declare_parameter(
+                f"{apriltag_id}_translation", rclpy.Parameter.Type.DOUBLE_ARRAY
+            )
+            self.declare_parameter(
+                f"{apriltag_id}_rotation", rclpy.Parameter.Type.DOUBLE_ARRAY
+            )
 
-    def make_static_transform(self, id, translation, rotation):
+            # get translation and rotation
+            translation = (
+                self.get_parameter(f"{apriltag_id}_translation")
+                .get_parameter_value()
+                .double_array_value
+            )
+            rotation = (
+                self.get_parameter(f"{apriltag_id}_rotation")
+                .get_parameter_value()
+                .double_array_value
+            )
+
+            # convert to transform
+            apriltag_wrt_world = self.make_static_transform(
+                apriltag_id, translation, rotation
+            )
+
+            # broadcast
+            self.tf_static_broadcaster.sendTransform(apriltag_wrt_world)
+
+    def make_static_transform(self, id, translation: Vector3, rotation: Quaternion):
         """
         Helper function to create a static transform between a single frame
         and the world frame.
         """
-        tf = TransformStamped()
+        transform_stamped = TransformStamped()
         header = Header()
         transform = Transform()
 
-        header.frame_id = 1
+        header.frame_id = "1"
 
-        transform.translation = translation
-        transform.rotation = rotation
+        # make translation
+        t_vector = Vector3(x=translation[0], y=translation[1], z=translation[2])
+        transform.translation = t_vector
 
-        tf.header = header
-        tf.transform = transform
-        tf.child_frame_id = id
+        # make rotation
+        r_quat = tf.quaternion_from_euler(rotation[0], rotation[1], rotation[2])
+        q_vector = Quaternion(x=r_quat[0], y=r_quat[1], z=r_quat[2], w=r_quat[3])
+        transform.rotation = q_vector
 
-        return tf
+        transform_stamped.header = header
+        transform_stamped.transform = transform
+        transform_stamped.child_frame_id = id
+
+        return transform_stamped
 
     def tf_callback(self, tfmessage: TFMessage):
+        # process camera-apriltag relationship
         tf: TransformStamped
         for tf in tfmessage.transforms:
-            if tf.child_frame_id in constants.apriltag_poses.keys():
-                self.get_parameter(f"")
-                at_world_coords = constants.apriltag_poses[tf.child_frame_id]
-                tf.transform
+            # if a camera-apriltag tf, find world-apriltag relationship and transform
+            if tf.child_frame_id in self.apriltag_list:
+                apriltag_wrt_world = self.tf_buffer.lookup_transform(
+                    tf.child_frame_id, "1"
+                )
+                apriltag_wrt_camera = tf
+                camera_wrt_apriltag = self.tf_buffer.transform(camera_wrt_apriltag, "1")
+            else:
+                print(
+                    f"tag {tf.child_frame_id} not found in AprilTag list. ignoring tf"
+                )
 
 
 def main(args=None):

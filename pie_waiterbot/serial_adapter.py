@@ -14,7 +14,7 @@ class SerialAdapterNode(Node):
         """
         Initialize an instance of the GoalDriverNode class.
         """
-        super().__init__("serial_adapter")
+        super().__init__("serial_adapter", allow_undeclared_parameters=True)
 
         # publishers
         self.speeds_subscriber = self.create_subscription(
@@ -22,9 +22,13 @@ class SerialAdapterNode(Node):
         )
 
         # attributes
-        arduinoComPort = self.get_parameter("serial_port")
+        self.declare_parameter("serial_port", rclpy.Parameter.Type.STRING)
+        arduinoComPort = (
+            self.get_parameter("serial_port").get_parameter_value().string_value
+        )
+        print(f"arduinoComPort: {arduinoComPort}")
         baudRate = 9600
-        self.port = serial.Serial(arduinoComPort, baudRate, timeout=1)
+        # self.port = serial.Serial(arduinoComPort, baudRate, timeout=1)
 
     def cmd_callback(self, twist: Twist):
         """
