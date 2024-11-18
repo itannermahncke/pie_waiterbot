@@ -48,7 +48,7 @@ class WebcamDriver(Node):
                     thickness=-1,
                 )
 
-            if self.i > 500:
+            if self.i > 2000:
                 self.output_video.release()
                 print("saving finished")
             else:
