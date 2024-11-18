@@ -23,7 +23,6 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "teleop = pie_waiterbot.teleop:main",
             "serial_adapter = pie_waiterbot.serial_adapter:main",
             "teleop_serial = pie_waiterbot.teleop_serial:main",
             "goal_driver = pie_waiterbot.goal_driver:main",

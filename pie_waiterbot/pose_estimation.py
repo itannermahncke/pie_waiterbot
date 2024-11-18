@@ -40,7 +40,7 @@ class PoseEstimationNode(Node):
 
         # subscribers
         self.detection_subscriber = self.create_subscription(
-            "apriltag/detections", AprilTagDetectionArray, self.detection_callback, 10
+            "detections", AprilTagDetectionArray, self.detection_callback, 10
         )
         self.transform_subscriber = self.create_subscription(
             "tf", TFMessage, self.tf_callback, 10
