@@ -1,8 +1,6 @@
 import rclpy
 from rclpy.node import Node
 
-import apriltag
-
 from std_msgs.msg import Header
 from tf2_msgs.msg import TFMessage
 from geometry_msgs.msg import Transform, Quaternion, TransformStamped, Pose, Vector3
@@ -10,6 +8,7 @@ from apriltag_msgs.msg import AprilTagDetection, AprilTagDetectionArray
 
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
+from tf2_ros.transform_broadcaster import TransformBroadcaster
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 import tf_transformations as tf
 
@@ -30,6 +29,7 @@ class PoseEstimationNode(Node):
 
         # transformation management
         self.tf_static_broadcaster = StaticTransformBroadcaster(self)
+        self.tf_dynamic_broadcaster = TransformBroadcaster(self)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.declare_parameter("apriltag_ids", rclpy.Parameter.Type.STRING_ARRAY)
@@ -40,7 +40,7 @@ class PoseEstimationNode(Node):
 
         # subscribers
         self.detection_subscriber = self.create_subscription(
-            "detections", AprilTagDetectionArray, self.detection_callback, 10
+            "apriltag/detections", AprilTagDetectionArray, self.detection_callback, 10
         )
         self.transform_subscriber = self.create_subscription(
             "tf", TFMessage, self.tf_callback, 10
@@ -113,17 +113,30 @@ class PoseEstimationNode(Node):
         # process camera-apriltag relationship
         tf: TransformStamped
         for tf in tfmessage.transforms:
-            # if a camera-apriltag tf, find world-apriltag relationship and transform
-            if tf.child_frame_id in self.apriltag_list:
-                apriltag_wrt_world = self.tf_buffer.lookup_transform(
-                    tf.child_frame_id, "1"
-                )
+            # if an apriltag_wrt_image tf, update apriltag_wrt_camera tf
+            if tf.child_frame_id in self.apriltag_list and tf.header != "camera":
                 apriltag_wrt_camera = tf
-                camera_wrt_apriltag = self.tf_buffer.transform(camera_wrt_apriltag, "1")
+                apriltag_wrt_camera.header = "camera"
+                self.tf_dynamic_broadcaster.sendTransform(apriltag_wrt_camera)
             else:
                 print(
                     f"tag {tf.child_frame_id} not found in AprilTag list. ignoring tf"
                 )
+
+    def detection_callback(self, detections):
+        """
+        Callback when an array of AprilTag detections is received.
+        """
+        detection: AprilTagDetection
+        for detection in detections:
+            if detection.id in self.apriltag_list:
+                apriltag_wrt_world = self.tf_buffer.lookup_transform(detection.id, "1")
+                apriltag_wrt_camera = self.tf_buffer.lookup_transform(
+                    detection.id, "camera"
+                )
+                # find camera_wrt_apriltag
+                # find camera_wrt_world
+                # publish updated pose estimate
 
 
 def main(args=None):
