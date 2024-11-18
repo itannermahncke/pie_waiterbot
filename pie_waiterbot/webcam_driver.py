@@ -25,6 +25,10 @@ class WebcamDriver(Node):
             self.show_detections,
             10,
         )
+        self.output_video = cv2.VideoWriter(
+            "output.avi", cv2.VideoWriter_fourcc(*"MJPG"), 20.0, (640, 480)
+        )
+        self.i = 0
 
     def listener_callback(self, img_data):
         try:
@@ -43,8 +47,14 @@ class WebcamDriver(Node):
                     color=(0, 0, 255),
                     thickness=-1,
                 )
-            cv2.imshow("Camera", self.current_frame)
-            cv2.waitKey(1)
+
+            if self.i > 500:
+                self.output_video.release()
+                print("saving finished")
+            else:
+                self.output_video.write(self.current_frame)
+                self.i = self.i + 1
+                print("Saving video...")
 
     def show_detections(self, detection_array):
         for i in detection_array.detections:
