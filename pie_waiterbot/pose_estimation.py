@@ -32,19 +32,17 @@ class PoseEstimationNode(Node):
         self.tf_dynamic_broadcaster = TransformBroadcaster(self)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.declare_parameter("apriltag_ids", rclpy.Parameter.Type.STRING_ARRAY)
+        self.declare_parameter("apriltag_ids", None)
         self.apriltag_list = (
             self.get_parameter("apriltag_ids").get_parameter_value().string_array_value
         )
         self.make_apriltag_transformations()
 
         # subscribers
-        self.detection_subscriber = self.create_subscription(
-            "detections", AprilTagDetectionArray, self.detection_callback, 10
+        self.d_sub = self.create_subscription(
+            AprilTagDetectionArray, "apriltag/detections", self.detection_callback, 10
         )
-        self.transform_subscriber = self.create_subscription(
-            "tf", TFMessage, self.tf_callback, 10
-        )
+        self.t_sub = self.create_subscription(TFMessage, "tf", self.tf_callback, 10)
 
         # pose publisher
         self.pose_publisher = self.create_publisher(Pose, "pose_estimate", 10)
@@ -92,7 +90,7 @@ class PoseEstimationNode(Node):
         header = Header()
         transform = Transform()
 
-        header.frame_id = "1"
+        header.frame_id = "world"
 
         # make translation
         t_vector = Vector3(x=translation[0], y=translation[1], z=translation[2])
@@ -130,11 +128,20 @@ class PoseEstimationNode(Node):
         detection: AprilTagDetection
         for detection in detections:
             if detection.id in self.apriltag_list:
-                apriltag_wrt_world = self.tf_buffer.lookup_transform(detection.id, "1")
+                # find initial relationships
+                apriltag_wrt_world = self.tf_buffer.lookup_transform(
+                    detection.id, "world"
+                )
                 apriltag_wrt_camera = self.tf_buffer.lookup_transform(
                     detection.id, "camera"
                 )
                 # find camera_wrt_apriltag
+                tf2.matrix3
+                transform = tf.concatenate_matrices(
+                    tf.translation_matrix(apriltag_wrt_camera),
+                    tf.quaternion_matrix(rot),
+                )
+                inversed_transform = t.inverse_matrix(transform)
                 # find camera_wrt_world
                 # publish updated pose estimate
 
