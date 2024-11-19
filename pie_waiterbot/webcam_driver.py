@@ -27,7 +27,7 @@ class WebcamDriver(Node):
             10,
         )
         self.output_video = cv2.VideoWriter(
-            "output.avi", cv2.VideoWriter_fourcc(*"MJPG"), 20.0, (640, 480)
+            "../output.avi", cv2.VideoWriter_fourcc(*"MJPG"), 20.0, (640, 480)
         )
         self.i = 0
 
@@ -40,7 +40,7 @@ class WebcamDriver(Node):
             self.get_logger().error(e)
 
         if self.current_frame is not None:
-            if self.x is not None:
+            if len(self.x) != 0:
                 pts = np.array(
                     [
                         [self.x[0], self.y[0]],
@@ -81,8 +81,8 @@ class WebcamDriver(Node):
                 int(i.corners[3].y),
             ]
         if len(detection_array.detections) == 0:
-            self.x = None
-            self.y = None
+            self.x = []
+            self.y = []
 
 
 def main(args=None):
