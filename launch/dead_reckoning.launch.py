@@ -32,7 +32,7 @@ def generate_launch_description():
             Node(
                 package="pie_waiterbot",
                 executable="goal_driver",
-                parameters=[apriltag_poses, {"goal_id": "test1"}],
+                parameters=[apriltag_poses],
             ),
             Node(
                 package="pie_waiterbot",
