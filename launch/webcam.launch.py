@@ -17,31 +17,16 @@ def generate_launch_description():
         )
     )
 
-    apriltag_poses = os.path.join(
-        get_package_share_directory("pie_waiterbot"), "apriltag_poses.yaml"
-    )
-
     return LaunchDescription(
         [
             apriltag_ros,
             Node(
+                package="v4l2_camera",
+                executable="v4l2_camera_node",
+            ),
+            Node(
                 package="pie_waiterbot",
                 executable="webcam_driver",
-            ),
-            Node(
-                package="pie_waiterbot",
-                executable="pose_estimation",
-                parameters=[apriltag_poses],
-            ),
-            Node(
-                package="pie_waiterbot",
-                executable="goal_driver",
-                parameters=[apriltag_poses],
-            ),
-            Node(
-                package="pie_waiterbot",
-                executable="serial_adapter",
-                parameters=[{"serial_port": "/dev/ttyACM0"}],
             ),
         ]
     )
