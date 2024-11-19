@@ -4,6 +4,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from apriltag_msgs.msg import AprilTagDetectionArray
 import cv2
+import numpy as np
 
 
 class WebcamDriver(Node):
@@ -11,8 +12,8 @@ class WebcamDriver(Node):
         super().__init__("webcam_driver")
         self.br = CvBridge()
         self.current_frame = None
-        self.x = None
-        self.y = None
+        self.x = []
+        self.y = []
         self.image_subscription = self.create_subscription(
             Image,
             "/image_raw",
@@ -40,12 +41,20 @@ class WebcamDriver(Node):
 
         if self.current_frame is not None:
             if self.x is not None:
-                self.current_frame = cv2.circle(
-                    self.current_frame,
-                    (self.x, self.y),
-                    radius=10,
-                    color=(0, 0, 255),
-                    thickness=-1,
+                pts = np.array(
+                    [
+                        [self.x[0], self.y[0]],
+                        [self.x[1], self.y[1]],
+                        [self.x[2], self.y[2]],
+                        [self.x[3], self.y[3]],
+                    ],
+                    np.int32,
+                )
+
+                pts = pts.reshape((-1, 1, 2))
+
+                self.current_frame = cv2.polylines(
+                    self.current_frame, [pts], True, [255, 0, 0], 2
                 )
 
             if self.i > 2000:
@@ -58,9 +67,19 @@ class WebcamDriver(Node):
 
     def show_detections(self, detection_array):
         for i in detection_array.detections:
-            self.get_logger().info(str(i.centre.x))
-            self.x = int(i.centre.x)
-            self.y = int(i.centre.y)
+            self.get_logger().info(str(i.corners[0].x))
+            self.x = [
+                int(i.corners[0].x),
+                int(i.corners[1].x),
+                int(i.corners[2].x),
+                int(i.corners[3].x),
+            ]
+            self.y = [
+                int(i.corners[0].y),
+                int(i.corners[1].y),
+                int(i.corners[2].y),
+                int(i.corners[3].y),
+            ]
         if len(detection_array.detections) == 0:
             self.x = None
             self.y = None
