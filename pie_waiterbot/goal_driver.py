@@ -53,6 +53,8 @@ class GoalDriverNode(Node):
         self.latest_coords = (0.0, 0.0, 0.0)  # x, y, theta
         self.ang_K = 0.1
         self.lin_K = 0.1
+        self.max_ang_vel = 0.9436
+        self.max_lin_vel = 0.2720
 
     def goal_update_callback(self, goal_id: String):
         """
@@ -81,15 +83,15 @@ class GoalDriverNode(Node):
             print("No goal yet")
         else:
             error = self.calculate_error()
-            twist.linear = error[0]
-            twist.angular = error[1]
+            twist.linear = error[0] * min(self.lin_K, self.max_lin_vel)
+            twist.angular = min(error[1] * min(self.ang_K, self.max_ang_vel))
             self.speeds_publisher.publish(twist)
 
     def calculate_error(self):
         """
         Calculate error between current heading and ideal heading to approach AprilTag.
         """
-        goal_xy = self.tf_buffer.lookup_transform(self.latest_goal_id, "1")
+        goal_xy = self.tf_buffer.lookup_transform(self.latest_goal_id, "world")
         delta_x = goal_xy[0] - self.latest_coords[0]
         delta_y = goal_xy[1] - self.latest_coords[1]
         lin_error = math.sqrt(delta_x**2 + delta_y**2)
