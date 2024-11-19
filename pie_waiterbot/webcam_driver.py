@@ -27,7 +27,7 @@ class WebcamDriver(Node):
             10,
         )
         self.output_video = cv2.VideoWriter(
-            "../output.avi", cv2.VideoWriter_fourcc(*"MJPG"), 20.0, (640, 480)
+            "output.avi", cv2.VideoWriter_fourcc(*"MJPG"), 20.0, (640, 480)
         )
         self.i = 0
 
