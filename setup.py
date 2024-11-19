@@ -29,6 +29,7 @@ setup(
             "pose_estimation = pie_waiterbot.pose_estimation:main",
             "webcam_driver = pie_waiterbot.webcam_driver:main",
             "dead_reckoning = pie_waiterbot.dead_reckoning:main",
+            "map_maker = pie_waiterbot.map_maker:main",
         ],
     },
 )
