@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.time import Time
 
 from tf2_msgs.msg import TFMessage
 from geometry_msgs.msg import TransformStamped, Pose
@@ -26,7 +27,7 @@ class PoseEstimationNode(Node):
         super().__init__("pose_estimation", allow_undeclared_parameters=True)
 
         # apriltag transform
-        self.declare_parameter("apriltag_ids", None)
+        self.declare_parameter("apriltag_ids", rclpy.Parameter.Type.STRING_ARRAY)
         self.apriltag_list = (
             self.get_parameter("apriltag_ids").get_parameter_value().string_array_value
         )
@@ -66,10 +67,10 @@ class PoseEstimationNode(Node):
             if detection.id in self.apriltag_list:
                 # find initial relationships
                 apriltag_wrt_world = self.tf_buffer.lookup_transform(
-                    detection.id, "world"
+                    detection.id, "world", Time()
                 )
                 apriltag_wrt_camera = self.tf_buffer.lookup_transform(
-                    detection.id, "camera"
+                    detection.id, "camera", Time()
                 )
                 # find camera_wrt_apriltag
                 transform = tf.concatenate_matrices(

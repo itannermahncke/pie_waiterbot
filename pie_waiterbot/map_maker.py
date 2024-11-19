@@ -21,7 +21,6 @@ class MapMakerNode(Node):
         self.tf_dynamic_broadcaster = TransformBroadcaster(self)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.declare_parameter("apriltag_ids", None)
         self.apriltag_list = (
             self.get_parameter("apriltag_ids").get_parameter_value().string_array_value
         )

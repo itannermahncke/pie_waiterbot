@@ -34,13 +34,24 @@ class DeadReckoningNode(Node):
         # setup pose
         new_pose = Pose()
         # assume constant velocity for transformation
-        angle_change = self.latest_twist.angular * self.timestep
-        linear_change = self.latest_twist.linear * self.timestep
+        angle_change = self.latest_twist.angular.z * self.timestep
+        linear_change = self.latest_twist.linear.x * self.timestep
 
         # apply change in angle first
-        euler_angles = euler_from_quaternion(self.latest_pose.orientation)
-        euler_angles[2] += angle_change
-        new_pose.orientation = quaternion_from_euler(euler_angles)
+        quaternion = []
+        quaternion.append(self.latest_pose.orientation.x)
+        quaternion.append(self.latest_pose.orientation.y)
+        quaternion.append(self.latest_pose.orientation.z)
+        quaternion.append(self.latest_pose.orientation.w)
+        euler_angles = euler_from_quaternion(quaternion)
+        euler_angles[2] == euler_angles[2] + angle_change
+        new_angle = quaternion_from_euler(
+            euler_angles[0], euler_angles[1], euler_angles[2]
+        )
+        new_pose.orientation.x = new_angle[0]
+        new_pose.orientation.y = new_angle[1]
+        new_pose.orientation.z = new_angle[2]
+        new_pose.orientation.w = new_angle[3]
 
         # apply xy change
         angle = 90.0 - angle_change

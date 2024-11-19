@@ -10,8 +10,17 @@ def generate_launch_description():
         get_package_share_directory("pie_waiterbot"), "apriltag_poses.yaml"
     )
 
+    serial_config = os.path.join(
+        get_package_share_directory("pie_waiterbot"), "serial.yaml"
+    )
+
     return LaunchDescription(
         [
+            Node(
+                package="pie_waiterbot",
+                executable="map_maker",
+                parameters=[apriltag_poses],
+            ),
             Node(
                 package="pie_waiterbot",
                 executable="dead_reckoning",
@@ -19,12 +28,12 @@ def generate_launch_description():
             Node(
                 package="pie_waiterbot",
                 executable="goal_driver",
-                parameters=[apriltag_poses],
+                parameters=[apriltag_poses, {"goal_id": "test1"}],
             ),
             Node(
                 package="pie_waiterbot",
                 executable="serial_adapter",
-                parameters=[{"serial_port": "/dev/ttyACM0"}],
+                parameters=[serial_config],
             ),
         ]
     )
