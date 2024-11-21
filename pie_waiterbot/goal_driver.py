@@ -1,12 +1,12 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.time import Time
 
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
 from std_msgs.msg import String
-from geometry_msgs.msg import Pose
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Pose, Twist, Transform
 
 from tf_transformations import euler_from_quaternion
 
@@ -71,7 +71,14 @@ class GoalDriverNode(Node):
         Callback function when a new pose estimate is received. Transforms the
         pose into usable coordinates.
         """
-        heading = euler_from_quaternion(pose.orientation)[2]
+        heading = euler_from_quaternion(
+            (
+                pose.orientation.x,
+                pose.orientation.y,
+                pose.orientation.z,
+                pose.orientation.w,
+            )
+        )[2]
         self.latest_coords = (pose.position.x, pose.position.y, heading)
 
     def publish_vel(self):
@@ -91,9 +98,11 @@ class GoalDriverNode(Node):
         """
         Calculate error between current heading and ideal heading to approach AprilTag.
         """
-        goal_xy = self.tf_buffer.lookup_transform(self.latest_goal_id, "world")
-        delta_x = goal_xy[0] - self.latest_coords[0]
-        delta_y = goal_xy[1] - self.latest_coords[1]
+        goal_xy: Transform = self.tf_buffer.lookup_transform(
+            self.latest_goal_id, "world", Time()
+        )
+        delta_x = goal_xy.translation.x - self.latest_coords[0]
+        delta_y = goal_xy.translation.z - self.latest_coords[1]
         lin_error = math.sqrt(delta_x**2 + delta_y**2)
         ang_error = math.atan2(delta_y, delta_x) - self.latest_coords[2]
         return (lin_error, ang_error)

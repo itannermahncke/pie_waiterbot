@@ -1,0 +1,4 @@
+/**:
+  ros__parameters:
+    serial_write: "/dev/tty/ACM0"
+    serial_read: "/dev/tty/ACM1"

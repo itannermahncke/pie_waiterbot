@@ -20,6 +20,10 @@ def generate_launch_description():
         )
     )
 
+    serial_config = os.path.join(
+        get_package_share_directory("pie_waiterbot"), "serial.yaml"
+    )
+
     apriltag_poses = os.path.join(
         get_package_share_directory("pie_waiterbot"), "apriltag_poses.yaml"
     )
@@ -44,7 +48,7 @@ def generate_launch_description():
             Node(
                 package="pie_waiterbot",
                 executable="serial_adapter",
-                parameters=[{"serial_port": "/dev/ttyACM0"}],
+                parameters=[serial_config],
             ),
         ]
     )
