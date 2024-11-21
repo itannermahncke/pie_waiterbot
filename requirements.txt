@@ -2,11 +2,11 @@ ament_copyright==0.12.11
 ament_flake8==0.12.11
 ament_index_python==1.4.0
 ament_pep257==0.12.11
-apriltag==0.0.16
 apriltag_msgs==2.0.1
 cv_bridge==3.2.1
 geometry_msgs==4.2.4
 launch_ros==0.19.7
+numpy==1.21.5
 opencv_python==4.10.0.84
 opencv_python_headless==4.8.1.78
 pyserial==3.5

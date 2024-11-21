@@ -17,10 +17,6 @@ def generate_launch_description():
     return LaunchDescription(
         [
             Node(
-                package="v4l2_camera",
-                executable="v4l2_camera_node",
-            ),
-            Node(
                 package="pie_waiterbot",
                 executable="map_maker",
                 parameters=[apriltag_poses],

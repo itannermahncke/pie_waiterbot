@@ -24,8 +24,9 @@ class DeadReckoningNode(Node):
         self.cmd_sub = self.create_subscription(Twist, "cmd_vel", self.cmd_callback, 10)
         self.pose_pub = self.create_publisher(Pose, "pose_estimate", 10)
 
-        self.latest_twist = Twist()  # start with no velocity
+        self.latest_twist = None  # start with no velocity
         self.latest_pose = Pose()  # start at origin
+        self.pose_pub.publish(self.latest_pose)
 
     def spoof_pub(self):
         """
@@ -33,38 +34,43 @@ class DeadReckoningNode(Node):
         """
         # setup pose
         new_pose = Pose()
-        # assume constant velocity for transformation
-        angle_change = self.latest_twist.angular.z * self.timestep
-        linear_change = self.latest_twist.linear.x * self.timestep
 
-        # apply change in angle first
-        quaternion = []
-        quaternion.append(self.latest_pose.orientation.x)
-        quaternion.append(self.latest_pose.orientation.y)
-        quaternion.append(self.latest_pose.orientation.z)
-        quaternion.append(self.latest_pose.orientation.w)
-        euler_angles = euler_from_quaternion(quaternion)
-        euler_angles[2] == euler_angles[2] + angle_change
-        new_angle = quaternion_from_euler(
-            euler_angles[0], euler_angles[1], euler_angles[2]
-        )
-        new_pose.orientation.x = new_angle[0]
-        new_pose.orientation.y = new_angle[1]
-        new_pose.orientation.z = new_angle[2]
-        new_pose.orientation.w = new_angle[3]
+        # if no twists have been received, hang out, otherwise estimate pose
+        if self.latest_twist is not None:
+            # assume constant velocity for transformation
+            angle_change = self.latest_twist.angular.z * self.timestep
+            linear_change = self.latest_twist.linear.x * self.timestep
 
-        # apply xy change
-        angle = 90.0 - angle_change
-        new_pose.position.x = (
-            linear_change * math.cos(angle) + self.latest_pose.position.x
-        )
-        new_pose.position.y = (
-            linear_change * math.sin(angle) + self.latest_pose.position.y
-        )
+            # apply change in angle first
+            quaternion = []
+            quaternion.append(self.latest_pose.orientation.x)
+            quaternion.append(self.latest_pose.orientation.y)
+            quaternion.append(self.latest_pose.orientation.z)
+            quaternion.append(self.latest_pose.orientation.w)
+            euler_angles = euler_from_quaternion(quaternion)
+            euler_angles[2] == euler_angles[2] + angle_change
+            new_angle = quaternion_from_euler(
+                euler_angles[0], euler_angles[1], euler_angles[2]
+            )
+            new_pose.orientation.x = new_angle[0]
+            new_pose.orientation.y = new_angle[1]
+            new_pose.orientation.z = new_angle[2]
+            new_pose.orientation.w = new_angle[3]
 
-        # broadcast pose update
-        self.latest_pose = new_pose
-        self.pose_pub.publish(new_pose)
+            # apply xy change
+            angle = 90.0 - angle_change
+            new_pose.position.x = (
+                linear_change * math.cos(angle) + self.latest_pose.position.x
+            )
+            new_pose.position.y = (
+                linear_change * math.sin(angle) + self.latest_pose.position.y
+            )
+
+            # broadcast pose update
+            self.latest_pose = new_pose
+        else:
+            new_pose = self.latest_pose
+            self.pose_pub.publish(new_pose)
 
     def cmd_callback(self, msg: Twist):
         """

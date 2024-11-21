@@ -1,8 +1,8 @@
 import rclpy
+import rclpy.logging
 from rclpy.node import Node
 
 from std_msgs.msg import Header
-from tf2_msgs.msg import TFMessage
 from geometry_msgs.msg import Transform, Quaternion, TransformStamped, Vector3
 
 from tf2_ros.buffer import Buffer
@@ -21,6 +21,7 @@ class MapMakerNode(Node):
         self.tf_dynamic_broadcaster = TransformBroadcaster(self)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.declare_parameter("apriltag_ids", rclpy.Parameter.Type.STRING_ARRAY)
         self.apriltag_list = (
             self.get_parameter("apriltag_ids").get_parameter_value().string_array_value
         )
@@ -32,6 +33,7 @@ class MapMakerNode(Node):
         world coordinate frame.
         """
         for apriltag_id in self.apriltag_list:
+            self.get_logger().info(f"MAKING TRANSFORM FOR {apriltag_id}")
             # declare parameters
             self.declare_parameter(
                 f"{apriltag_id}_translation", rclpy.Parameter.Type.DOUBLE_ARRAY
@@ -56,20 +58,26 @@ class MapMakerNode(Node):
             apriltag_wrt_world = self.make_static_transform(
                 apriltag_id, translation, rotation
             )
+            self.get_logger().info(f"logging {apriltag_wrt_world} (output)")
 
             # broadcast
             self.tf_static_broadcaster.sendTransform(apriltag_wrt_world)
+            self.get_logger().info("transform sent")
 
-    def make_static_transform(self, id, translation: Vector3, rotation: Quaternion):
+    def make_static_transform(
+        self, id, translation: list[float], rotation: list[float]
+    ):
         """
         Helper function to create a static transform between a single frame
         and the world frame.
         """
+        self.get_logger().info("Making a static transform")
         transform_stamped = TransformStamped()
         header = Header()
         transform = Transform()
 
         header.frame_id = "world"
+        header.stamp = self.get_clock().now().to_msg()
 
         # make translation
         t_vector = Vector3(x=translation[0], y=translation[1], z=translation[2])
@@ -84,6 +92,7 @@ class MapMakerNode(Node):
         transform_stamped.transform = transform
         transform_stamped.child_frame_id = id
 
+        self.get_logger().info(f"logging {transform_stamped}")
         return transform_stamped
 
 

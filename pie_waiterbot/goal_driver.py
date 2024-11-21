@@ -99,8 +99,8 @@ class GoalDriverNode(Node):
         Calculate error between current heading and ideal heading to approach AprilTag.
         """
         goal_xy: Transform = self.tf_buffer.lookup_transform(
-            self.latest_goal_id, "world", Time()
-        )
+            "world", self.latest_goal_id, Time()
+        ).transform
         delta_x = goal_xy.translation.x - self.latest_coords[0]
         delta_y = goal_xy.translation.z - self.latest_coords[1]
         lin_error = math.sqrt(delta_x**2 + delta_y**2)
