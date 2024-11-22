@@ -5,7 +5,7 @@ from rclpy.time import Time
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from geometry_msgs.msg import Pose, Twist, Transform
 
 from tf_transformations import euler_from_quaternion
@@ -47,6 +47,7 @@ class GoalDriverNode(Node):
         # publishers
         self.speed_interval = self.create_timer(0.1, self.publish_vel)
         self.speeds_publisher = self.create_publisher(Twist, "cmd_vel", 10)
+        self.goal_status = self.create_publisher(Bool, "goal_status", 10)
 
         # attributes
         self.latest_goal_id = None
@@ -55,6 +56,7 @@ class GoalDriverNode(Node):
         self.lin_K = 0.1
         self.max_ang_vel = 0.9436
         self.max_lin_vel = 0.2720
+        self.tolerance = 0.05
 
     def goal_update_callback(self, goal_id: String):
         """
@@ -63,6 +65,7 @@ class GoalDriverNode(Node):
         """
         if goal_id.data in self.apriltag_id_list:
             self.latest_goal_id = goal_id.data
+            self.goal_status.publish(Bool(data=False))
         else:
             print(f"ERROR: ID {goal_id.data} NOT FOUND IN KNOWN ID LIST.")
 
@@ -79,7 +82,7 @@ class GoalDriverNode(Node):
                 pose.orientation.w,
             )
         )[2]
-        self.latest_coords = (pose.position.x, pose.position.y, heading)
+        self.latest_coords = (pose.position.x, pose.position.y, heading[2])
 
     def publish_vel(self):
         """
@@ -89,10 +92,17 @@ class GoalDriverNode(Node):
         if self.latest_goal_id is None:
             print("No goal yet")
         else:
-            error = self.calculate_error()
-            twist.linear = error[0] * min(self.lin_K, self.max_lin_vel)
-            twist.angular = min(error[1] * min(self.ang_K, self.max_ang_vel))
-            self.speeds_publisher.publish(twist)
+            lin_error, ang_error = self.calculate_error()
+
+            # if error is significant, correct
+            if lin_error < self.tolerance and ang_error < self.tolerance:
+                twist.linear.x = min(lin_error * self.lin_K, self.max_lin_vel)
+                twist.angular.z = min(ang_error * self.ang_K, self.max_ang_vel)
+                self.speeds_publisher.publish(twist)
+            # if within tolerance, stop and change goal state
+            else:
+                self.speeds_publisher.publish(Twist())
+                self.goal_status.publish(Bool(data=True))
 
     def calculate_error(self):
         """
@@ -105,7 +115,7 @@ class GoalDriverNode(Node):
         delta_y = goal_xy.translation.z - self.latest_coords[1]
         lin_error = math.sqrt(delta_x**2 + delta_y**2)
         ang_error = math.atan2(delta_y, delta_x) - self.latest_coords[2]
-        return (lin_error, ang_error)
+        return lin_error, ang_error
 
 
 def main(args=None):
