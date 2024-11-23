@@ -46,8 +46,9 @@ class SerialAdapterNode(Node):
         Callback function when a Twist command is received. Transmit it onto
         the serial port for the microcontroller.
         """
-        serial_line = (f"{twist.linear.x}", {twist.angular.z})
-        self.write_port.write(serial_line)
+        serial_line = f"{twist.linear.x}, {twist.angular.z}"
+        self.get_logger().info(f"SERIAL PUBLISH: {twist.linear.x}, {twist.angular.z}")
+        self.write_port.write(serial_line.encode())
 
     def read_callback(self):
         """
