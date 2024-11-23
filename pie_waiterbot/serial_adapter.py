@@ -28,7 +28,7 @@ class SerialAdapterNode(Node):
         serial_write = (
             self.get_parameter("serial_write").get_parameter_value().string_value
         )
-        # self.write_port = serial.Serial(serial_write, baudRate, timeout=1)
+        self.write_port = serial.Serial(serial_write, baudRate, timeout=1)
 
         # for reading
         self.read_timer = self.create_timer(0.01, self.read_callback)
@@ -46,7 +46,7 @@ class SerialAdapterNode(Node):
         Callback function when a Twist command is received. Transmit it onto
         the serial port for the microcontroller.
         """
-        serial_line = (f"{twist.linear}", {twist.angular})
+        serial_line = (f"{twist.linear.x}", {twist.angular.z})
         self.write_port.write(serial_line)
 
     def read_callback(self):
