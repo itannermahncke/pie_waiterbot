@@ -4,45 +4,99 @@ import serial
 from std_msgs.msg import String
 
 
-class Sensor:
-    COLOR = "color"
-    STRAINGAUGE = "gauge"
-
-    class Colors:
-        BLUE = 0
-        GREEN = 1
-        RED = 2
-
-
-class Motor:
-    WHEELBASE = "base"
-    STEPPER = "stepper"
-
-    class Action:
-        TRAY = 20
-        DRINK = 30
-
-
 class FourbarModule(Node):
+    """
+    Receives messages from microcontroller and decides what to do with the
+    fourbar module.
+    """
 
     def __init__(self):
         super().__init__("fourbar_module")
-        self.publisher_ = self.create_publisher(String, "fourbar", 10)
-        timer_period = 0.1  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        # attributes
-        receiving_com_port = "/dev/ttyACM0"
-        publishing_com_port = "/dev/ttyACM0"
-        baud_rate = 9600
-        self.receiving_port = serial.Serial(receiving_com_port, baud_rate, timeout=1)
-        self.publishing_port = serial.Serial(publishing_com_port, baud_rate, timeout=1)
+        # state controls
+        # 0: task not started
+        # 1: extending module
+        # 2: retracting module
+        self.task_status = 0
+        # TRAY or DRINKS
+        self.task_mode = "TRAY"
+
+        self.serial_subscriber = self.create_subscription(
+            String, "serial", self.serial_callback, 10
+        )
+        # change the name of this topic
+        self.goal_subscriber = self.create_subscription(
+            String, "destination", self.serial_callback, 10
+        )
+
+        self.angle_publisher = self.create_publisher(String, "fourbar_module_angle", 10)
+        self.status_publisher = self.create_publisher(
+            String, "fourbar_module_status", 10
+        )
+        self.publisher_tick_rate = 0.1
+        self.publish_timer = self.create_timer(
+            self.publisher_tick_rate, self.timer_callback
+        )
+        self.time = 0
+
+    def serial_callback(self, string: String):
+        """
+        Takes data from the serial port and determines what module is currently
+        loaded.
+        """
+        msg_arr = string.data.split(":")
+        if msg_arr[0] == "COLOR":
+            match msg_arr[1]:
+                case "300":
+                    self.task_mode = "TRAY"
+                case "500":
+                    self.task_mode = "DRINK"
+                case _:
+                    self.task_mode = "TRAY"
+        if msg_arr[0] == "BUTTON":  # or strain gauge reading
+            self.task_status = 2
+
+    def goal_callback(self, string: String):
+        """
+        Takes a message from the ${topic name} topic and sets the state of the
+        module's task.
+
+        0: not started
+        1: extend the module
+        2: retracting the module
+        """
+        if string.data == "MOVING":
+            self.task_status = 0
+        if string.data == "TARGET_REACHED":
+            if self.task_status == 0:
+                self.task_status = 1
 
     def timer_callback(self):
-        data = self.receiving_port.readline().decode()
-        if len(data) > 0:
-            Sensor.COLOR
-        return
+        """
+        Publishes data
+        """
+        if self.task_status == 2:
+            self.time = self.time + self.publisher_tick_rate
+            if self.time > 5:  # wait for 5 seconds before changing status to 0
+                self.task_status = 0
+                self.time = 0
+
+        angle = String()
+        status = String()
+
+        status.data = self.task_status
+        if self.task_status in (0, 2):
+            angle.data = 0
+        if self.task_status == 1:
+            if self.task_mode == "TRAY":
+                angle.data = 30  # change this
+            if self.task_mode == "DRINK":
+                angle.data = 45  # change this
+            else:
+                angle.data = 0
+
+        self.status_publisher.publish(status)
+        self.angle_publisher.publish(angle)
 
 
 def main(args=None):
