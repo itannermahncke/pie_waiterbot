@@ -49,8 +49,9 @@ class SerialAdapterNode(Node):
         Callback function when a Twist command is received. Transmit it onto
         the serial port for the microcontroller.
         """
-        serial_line = f"{twist.linear}, {twist.angular}"
-        self.write_port.write(self.cfg_msg(serial_line))
+        serial_line = f"{twist.linear.x}, {twist.angular.z}"
+        self.get_logger().info(f"SERIAL PUBLISH: {twist.linear.x}, {twist.angular.z}")
+        self.write_port.write(self.cfg_msg(serial_line).encode())
 
     def fourbar_callback(self, string: String):
         """
@@ -58,7 +59,8 @@ class SerialAdapterNode(Node):
         which includes an int signifying the angle that the fourbar should be
         at. Transmit it onto the serial port of the microcontroller.
         """
-        self.write_port.write(self.cfg_msg(string.data))
+        self.get_logger().info(f"SERIAL PUBLISH: {string.data}")
+        self.write_port.write(self.cfg_msg(string.data).encode())
 
     def read_callback(self):
         """

@@ -10,16 +10,16 @@ def generate_launch_description():
         get_package_share_directory("pie_waiterbot"), "apriltag_poses.yaml"
     )
 
+    robot_info = os.path.join(
+        get_package_share_directory("pie_waiterbot"), "robot_info.yaml"
+    )
+
     serial_config = os.path.join(
         get_package_share_directory("pie_waiterbot"), "serial.yaml"
     )
 
     return LaunchDescription(
         [
-            Node(
-                package="v4l2_camera",
-                executable="v4l2_camera_node",
-            ),
             Node(
                 package="pie_waiterbot",
                 executable="map_maker",
@@ -28,11 +28,12 @@ def generate_launch_description():
             Node(
                 package="pie_waiterbot",
                 executable="dead_reckoning",
+                parameters=[robot_info],
             ),
             Node(
                 package="pie_waiterbot",
                 executable="goal_driver",
-                parameters=[apriltag_poses],
+                parameters=[apriltag_poses, robot_info],
             ),
             Node(
                 package="pie_waiterbot",
