@@ -17,6 +17,7 @@ class FourbarModule(Node):
         # 0: task not started
         # 1: extending module
         # 2: retracting module
+        # 3: just finished
         self.task_status = 0
         # TRAY or DRINKS
         self.task_mode = "TRAY"
@@ -24,6 +25,7 @@ class FourbarModule(Node):
         self.serial_subscriber = self.create_subscription(
             String, "serial", self.serial_callback, 10
         )
+
         # change the name of this topic
         self.goal_subscriber = self.create_subscription(
             String, "destination", self.serial_callback, 10
@@ -64,6 +66,7 @@ class FourbarModule(Node):
         0: not started
         1: extend the module
         2: retracting the module
+        3: Just finished
         """
         if string.data == "MOVING":
             self.task_status = 0
@@ -78,14 +81,14 @@ class FourbarModule(Node):
         if self.task_status == 2:
             self.time = self.time + self.publisher_tick_rate
             if self.time > 5:  # wait for 5 seconds before changing status to 0
-                self.task_status = 0
+                self.task_status = 3
                 self.time = 0
 
         angle = String()
         status = String()
 
         status.data = self.task_status
-        if self.task_status in (0, 2):
+        if self.task_status in (0, 2, 3):
             angle.data = 0
         if self.task_status == 1:
             if self.task_mode == "TRAY":
