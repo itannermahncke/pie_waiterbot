@@ -30,6 +30,7 @@ setup(
             "webcam_driver = pie_waiterbot.webcam_driver:main",
             "dead_reckoning = pie_waiterbot.dead_reckoning:main",
             "map_maker = pie_waiterbot.map_maker:main",
+            "fourbar_module = pie_waiterbot.fourbar_module:main",
         ],
     },
 )

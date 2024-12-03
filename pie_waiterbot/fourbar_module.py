@@ -1,7 +1,6 @@
 import rclpy
 from rclpy.node import Node
-import serial
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 
 
 class FourbarModule(Node):
@@ -18,9 +17,10 @@ class FourbarModule(Node):
         # 1: extending module
         # 2: retracting module
         # 3: just finished
-        self.task_status = 0
+        self.task_status = 1
         # TRAY or DRINKS
         self.task_mode = "TRAY"
+        self.destination = None
 
         self.serial_subscriber = self.create_subscription(
             String, "serial", self.serial_callback, 10
@@ -28,7 +28,10 @@ class FourbarModule(Node):
 
         # change the name of this topic
         self.goal_subscriber = self.create_subscription(
-            String, "destination", self.serial_callback, 10
+            Bool, "goal_status", self.goal_callback, 10
+        )
+        self.location_subscriber = self.create_subscription(
+            String, "goal_id", self.location_callback, 10
         )
 
         self.angle_publisher = self.create_publisher(String, "fourbar_module_angle", 10)
@@ -46,21 +49,22 @@ class FourbarModule(Node):
         Takes data from the serial port and determines what module is currently
         loaded.
         """
-        msg_arr = string.data.split(":")
-        if msg_arr[0] == "COLOR":
+        msg_arr = string.data.split(",")
+        if msg_arr[0] == "CL":
             match msg_arr[1]:
-                case "300":
+                case "1":
                     self.task_mode = "TRAY"
-                case "500":
+                case "2":
                     self.task_mode = "DRINK"
                 case _:
                     self.task_mode = "TRAY"
-        if msg_arr[0] == "BUTTON":  # or strain gauge reading
-            self.task_status = 2
+        if msg_arr[0] == "SG":
+            if msg_arr[1] == "false":
+                self.task_status = 2
 
-    def goal_callback(self, string: String):
+    def goal_callback(self, boolean: Bool):
         """
-        Takes a message from the ${topic name} topic and sets the state of the
+        Takes a boolean from the goal_status topic and sets the state of the
         module's task.
 
         0: not started
@@ -68,11 +72,17 @@ class FourbarModule(Node):
         2: retracting the module
         3: Just finished
         """
-        if string.data == "MOVING":
-            self.task_status = 0
-        if string.data == "TARGET_REACHED":
-            if self.task_status == 0:
+        if boolean.data:
+            if self.task_status in (0, 3):
                 self.task_status = 1
+
+    def location_callback(self, goal_id: String):
+        """
+        Takes an int specifying target location
+        """
+        if not goal_id.data == self.destination:
+            self.task_status = 0
+        self.destination = goal_id.data
 
     def timer_callback(self):
         """
@@ -87,16 +97,21 @@ class FourbarModule(Node):
         angle = String()
         status = String()
 
-        status.data = self.task_status
+        cur_angle = 0
+
+        status.data = str(self.task_status)
         if self.task_status in (0, 2, 3):
-            angle.data = 0
+            cur_angle = 0
         if self.task_status == 1:
             if self.task_mode == "TRAY":
-                angle.data = 30  # change this
-            if self.task_mode == "DRINK":
-                angle.data = 45  # change this
+                cur_angle = 30  # change this
+            elif self.task_mode == "DRINK":
+                cur_angle = 45  # change this
             else:
-                angle.data = 0
+                cur_angle = 0
+
+        angle.data = str(cur_angle)
+        self.get_logger().info(f"angle: {cur_angle}, status: {self.task_status}")
 
         self.status_publisher.publish(status)
         self.angle_publisher.publish(angle)

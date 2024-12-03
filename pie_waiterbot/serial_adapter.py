@@ -25,13 +25,18 @@ class SerialAdapterNode(Node):
             Twist, "cmd_vel", self.cmd_callback, 10
         )
         self.fourbar_angle = self.create_subscription(
-            String, "fourbar_module_angle", self.cmd_callback, 10
+            String, "fourbar_module_angle", self.fourbar_callback, 10
         )
         self.declare_parameter("serial_write", rclpy.Parameter.Type.STRING)
         serial_write = (
             self.get_parameter("serial_write").get_parameter_value().string_value
         )
-        self.write_port = serial.Serial(serial_write, baudRate, timeout=1)
+        try:
+            self.write_port = serial.Serial(serial_write, baudRate, timeout=1)
+            self.get_logger().info("Write serial connected")
+        except:
+            self.write_port = None
+            self.get_logger().info(f"Write serial failed to connect")
 
         # for reading
         self.read_timer = self.create_timer(0.01, self.read_callback)
@@ -39,55 +44,63 @@ class SerialAdapterNode(Node):
         serial_read = (
             self.get_parameter("serial_read").get_parameter_value().string_value
         )
-        self.read_port = serial.Serial(serial_read, baudRate, timeout=1)
+        try:
+            self.read_port = serial.Serial(serial_read, baudRate, timeout=1)
+            self.get_logger().info("Read serial connected")
+        except:
+            self.read_port = None
+            self.get_logger().info("Read serial failed to connect")
 
         # publishers
         self.goal_publisher = self.create_publisher(String, "goal_id", 10)
+        self.serial_publisher = self.create_publisher(String, "serial", 10)
 
     def cmd_callback(self, twist: Twist):
         """
         Callback function when a Twist command is received. Transmit it onto
         the serial port for the microcontroller.
         """
-        serial_line = f"{twist.linear.x}, {twist.angular.z}"
-        self.get_logger().info(f"SERIAL PUBLISH: {twist.linear.x}, {twist.angular.z}")
-        self.write_port.write(self.cfg_msg(serial_line).encode())
+        serial_line = self.cfg_msg("DT", f"{twist.linear.x},{twist.angular.z}")
+        self.get_logger().info(f"SERIAL PUBLISH: {serial_line}")
+        if self.write_port is not None:
+            self.write_port.write(serial_line.encode())
 
     def fourbar_callback(self, string: String):
         """
         Callback function for the fourball_module topic. Gets a String message
-        which includes an int signifying the angle that the fourbar should be
+        which includes an int signifying the a"ngle that the fourbar should be
         at. Transmit it onto the serial port of the microcontroller.
         """
-        self.get_logger().info(f"SERIAL PUBLISH: {string.data}")
-        self.write_port.write(self.cfg_msg(string.data).encode())
+        serial_line = self.cfg_msg("ST", string.data)
+        self.get_logger().info(f"SERIAL PUBLISH: {serial_line}")
+        if self.write_port is not None:
+            self.write_port.write(serial_line.encode())
 
     def read_callback(self):
         """
         Decode the latest line of serial sensor data.
         """
-        # data = self.read_port.readline().decode()
-        data = ""
+        if self.read_port is not None:
+            data = self.read_port.readline().decode()
+        else:
+            data = ""
         if len(data) > 0:
-            goal = String()
-            goal.data = data
-            self.goal_publisher.publish(goal)
+            # goal = String()
+            # goal.data = data
+            # self.goal_publisher.publish(goal)
+            serial_msg = String()
+            serial_msg.data = data
+            self.serial_publisher.publish(serial_msg)
 
-    def cfg_msg(self, msg):
+    def cfg_msg(self, code, msg):
         """
         Reconfigure messages sent to the microcontroller in a format that could
         be interepreted by the microcontroller.
 
-        BASE_MOVEMENT: ${linear}, ${angular}
-        FOURBAR_MODULE: ${stepper motor angle}
+        DT,${linear},${angular}
+        ST,${stepper motor angle}
         """
-        val = msg.split(",")
-        if len(val) == 1:
-            return "FOURBAR_MODULE:" + msg
-        if len(val) == 2:
-            return "BASE_MOVEMENT:" + msg
-        else:
-            return "BASE_MOVEMENT:0, 0"
+        return code + "," + msg
 
 
 def main(args=None):
