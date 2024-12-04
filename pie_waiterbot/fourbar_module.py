@@ -17,13 +17,17 @@ class FourbarModule(Node):
         # 1: extending module
         # 2: retracting module
         # 3: just finished
-        self.task_status = 1
+        self.task_status = 0
         # TRAY or DRINKS
         self.task_mode = "TRAY"
         self.destination = None
 
-        self.serial_subscriber = self.create_subscription(
-            String, "serial", self.serial_callback, 10
+        # subscribe to sensor topics
+        self.color_subscriber = self.create_subscription(
+            String, "color_sensor", self.color_callback, 10
+        )
+        self.strain_gauge_subsciber = self.create_subscription(
+            Bool, "strain_gauge", self.strain_gauge_callback, 10
         )
 
         # change the name of this topic
@@ -44,22 +48,22 @@ class FourbarModule(Node):
         )
         self.time = 0
 
-    def serial_callback(self, string: String):
+    def color_callback(self, string: String):
         """
-        Takes data from the serial port and determines what module is currently
+        Takes data from the color_sensor topic and determines what module is currently
         loaded.
         """
-        msg_arr = string.data.split(",")
-        if msg_arr[0] == "CL":
-            match msg_arr[1]:
-                case "1":
-                    self.task_mode = "TRAY"
-                case "2":
-                    self.task_mode = "DRINK"
-                case _:
-                    self.task_mode = "TRAY"
-        if msg_arr[0] == "SG":
-            if msg_arr[1] == "false":
+        if string.data == "1":
+            self.task_mode = "TRAY"
+        elif string.data == "2":
+            self.task_mode = "DRINK"
+
+    def strain_gauge_callback(self, strain: Bool):
+        """
+        Takes data from the strain_gauge topic and changes the task status
+        """
+        if self.task_status == 1:
+            if not strain.data:
                 self.task_status = 2
 
     def goal_callback(self, boolean: Bool):

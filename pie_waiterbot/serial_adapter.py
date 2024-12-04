@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool, Float32MultiArray
 from geometry_msgs.msg import Twist
 
 import serial
@@ -36,7 +36,7 @@ class SerialAdapterNode(Node):
             self.get_logger().info("Write serial connected")
         except:
             self.write_port = None
-            self.get_logger().info(f"Write serial failed to connect")
+            self.get_logger().info("Write serial failed to connect")
 
         # for reading
         self.read_timer = self.create_timer(0.01, self.read_callback)
@@ -53,7 +53,15 @@ class SerialAdapterNode(Node):
 
         # publishers
         self.goal_publisher = self.create_publisher(String, "goal_id", 10)
-        self.serial_publisher = self.create_publisher(String, "serial", 10)
+        self.drivetrain_publisher = self.create_publisher(
+            Float32MultiArray, "drivetrain_encoder", 10
+        )
+        self.red_publisher = self.create_publisher(Bool, "red_button", 10)
+        self.green_publisher = self.create_publisher(Bool, "green_button", 10)
+        self.blue_publisher = self.create_publisher(Bool, "blue_button", 10)
+        self.imu_publisher = self.create_publisher(Float32MultiArray, "imu", 10)
+        self.strain_publisher = self.create_publisher(Bool, "strain_gauge", 10)
+        self.color_publisher = self.create_publisher(String, "color_sensor", 10)
 
     def cmd_callback(self, twist: Twist):
         """
@@ -88,9 +96,46 @@ class SerialAdapterNode(Node):
             # goal = String()
             # goal.data = data
             # self.goal_publisher.publish(goal)
-            serial_msg = String()
-            serial_msg.data = data
-            self.serial_publisher.publish(serial_msg)
+            msg_arr = data.data.split(",")
+            if msg_arr[0] == "EN":
+                self.drivetrain_publisher.publish(
+                    Float32MultiArray(data=[float(msg_arr[1]), float(msg_arr[2])])
+                )
+            elif msg_arr[0] == "BR":
+                boolean = False
+                if msg_arr[1] == "1":
+                    boolean = True
+                self.red_publisher.publish(Bool(data=boolean))
+            elif msg_arr[0] == "BG":
+                if msg_arr[1] == "0":
+                    boolean = False
+                if msg_arr[1] == "1":
+                    boolean = True
+                else:
+                    return
+                self.green_publisher.publish(Bool(data=boolean))
+            elif msg_arr[0] == "BB":
+                if msg_arr[1] == "0":
+                    boolean = False
+                if msg_arr[1] == "1":
+                    boolean = True
+                else:
+                    return
+                self.blue_publisher.publish(Bool(data=boolean))
+            elif msg_arr[0] == "MU":
+                self.imu_publisher.publish(
+                    Float32MultiArray(data=[float(msg_arr[1]), float(msg_arr[2])])
+                )
+            elif msg_arr[0] == "SG":
+                if msg_arr[1] == "0":
+                    boolean = False
+                if msg_arr[1] == "1":
+                    boolean = True
+                else:
+                    return
+                self.strain_publisher.publish(Bool(data=boolean))
+            elif msg_arr[0] == "CL":
+                self.color_publisher.publish(String(data=msg_arr[1]))
 
     def cfg_msg(self, code, msg):
         """
