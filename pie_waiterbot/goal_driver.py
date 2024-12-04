@@ -66,7 +66,7 @@ class GoalDriverNode(Node):
         self.lin_K = 0.1
         self.max_ang_vel = 0.9436
         self.max_lin_vel = 0.2720
-        self.tolerance = 0.05
+        self.tolerance = 0.1
 
     def goal_update_callback(self, goal_id: String):
         """
