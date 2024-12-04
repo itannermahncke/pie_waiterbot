@@ -63,7 +63,7 @@ class GoalDriverNode(Node):
 
         # control
         self.ang_K = 0.5
-        self.lin_K = 0.5
+        self.lin_K = 0.8
         self.max_ang_vel = 0.9436
         self.max_lin_vel = 0.2720
         self.tolerance = 0.05
@@ -114,7 +114,7 @@ class GoalDriverNode(Node):
 
             # if error is significant, correct
             if lin_error > self.tolerance or ang_error > self.tolerance:
-                twist.linear.x = min(lin_error * self.lin_K, self.max_lin_vel)
+                twist.linear.x = self.max_lin_vel
                 twist.angular.z = min(ang_error * self.ang_K, self.max_ang_vel)
             # if within tolerance, stop and change goal state
             else:
