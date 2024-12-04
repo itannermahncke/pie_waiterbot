@@ -2,3 +2,5 @@
   ros__parameters:
     serial_write: "/dev/ttyACM0"
     serial_read: "/dev/ttyACM1"
+    drivetrain_code: "00"
+    stepper_code: "01"

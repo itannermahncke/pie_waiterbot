@@ -68,7 +68,7 @@ class SerialAdapterNode(Node):
         Callback function when a Twist command is received. Transmit it onto
         the serial port for the microcontroller.
         """
-        serial_line = self.cfg_msg("DT", f"{twist.linear.x},{twist.angular.z}")
+        serial_line = self.cfg_msg("0", f"{twist.linear.x},{twist.angular.z}")
         self.get_logger().info(f"SERIAL PUBLISH: {serial_line}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
@@ -79,7 +79,7 @@ class SerialAdapterNode(Node):
         which includes an int signifying the a"ngle that the fourbar should be
         at. Transmit it onto the serial port of the microcontroller.
         """
-        serial_line = self.cfg_msg("ST", string.data)
+        serial_line = self.cfg_msg("1", string.data)
         self.get_logger().info(f"SERIAL PUBLISH: {serial_line}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
