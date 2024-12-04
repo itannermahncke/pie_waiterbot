@@ -1,5 +1,0 @@
-/**:
-  ros__parameters:
-    apriltag_ids: ['test1']
-    test1_translation: [5.0, 5.0, 0.0]
-    test1_rotation: [0.0, 0.0, 0.0]

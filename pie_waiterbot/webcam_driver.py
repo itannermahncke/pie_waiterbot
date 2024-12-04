@@ -8,7 +8,15 @@ import numpy as np
 
 
 class WebcamDriver(Node):
+    """
+    This node was meant for testing the apriltag detection functionality with
+    a computer webcam rather than an RPi camera.
+    """
+
     def __init__(self):
+        """
+        Initializes an instance of the webcam driver.
+        """
         super().__init__("webcam_driver")
         self.br = CvBridge()
         self.current_frame = None

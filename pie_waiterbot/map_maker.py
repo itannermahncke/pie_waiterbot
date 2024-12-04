@@ -3,7 +3,14 @@ import rclpy.logging
 from rclpy.node import Node
 
 from std_msgs.msg import Header
-from geometry_msgs.msg import Transform, Quaternion, TransformStamped, Vector3
+from geometry_msgs.msg import (
+    Transform,
+    TransformStamped,
+    Quaternion,
+    TransformStamped,
+    Vector3,
+)
+from tf2_msgs.msg import TFMessage
 
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
@@ -13,14 +20,23 @@ import tf_transformations as tf
 
 
 class MapMakerNode(Node):
+    """
+    This node manages static and dynamic transformations of objects in relation
+    to each other and the world frame. It centrally focuses on the relationship
+    between the robot and apriltags, as well as between the apriltags and the world.
+    """
 
     def __init__(self):
         super().__init__("map_maker", allow_undeclared_parameters=True)
+
         # transformation management
         self.tf_static_broadcaster = StaticTransformBroadcaster(self)
         self.tf_dynamic_broadcaster = TransformBroadcaster(self)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.t_sub = self.create_subscription(TFMessage, "tf", self.tf_callback, 10)
+
+        # apriltag placement
         self.declare_parameter("apriltag_ids", rclpy.Parameter.Type.STRING_ARRAY)
         self.apriltag_list = (
             self.get_parameter("apriltag_ids").get_parameter_value().string_array_value
@@ -90,6 +106,24 @@ class MapMakerNode(Node):
         transform_stamped.child_frame_id = id
 
         return transform_stamped
+
+    def tf_callback(self, tfmessage: TFMessage):
+        """
+        When a new tf message describes the relationship between an apriltag
+        and the camera plane, send it to the transform manager.
+        """
+        # process camera-apriltag relationship
+        tf: TransformStamped
+        for tf in tfmessage.transforms:
+            # if an apriltag_wrt_image tf, update apriltag_wrt_camera tf
+            if tf.child_frame_id in self.apriltag_list and tf.header != "camera":
+                apriltag_wrt_camera = tf
+                apriltag_wrt_camera.header = "camera"
+                self.tf_dynamic_broadcaster.sendTransform(apriltag_wrt_camera)
+            else:
+                print(
+                    f"tag {tf.child_frame_id} not found in AprilTag list. ignoring tf"
+                )
 
 
 def main(args=None):

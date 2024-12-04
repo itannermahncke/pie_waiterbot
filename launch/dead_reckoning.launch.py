@@ -6,8 +6,8 @@ import os
 
 
 def generate_launch_description():
-    apriltag_poses = os.path.join(
-        get_package_share_directory("pie_waiterbot"), "apriltag_poses.yaml"
+    landmark_poses = os.path.join(
+        get_package_share_directory("pie_waiterbot"), "landmark_poses.yaml"
     )
 
     robot_info = os.path.join(
@@ -23,7 +23,7 @@ def generate_launch_description():
             Node(
                 package="pie_waiterbot",
                 executable="map_maker",
-                parameters=[apriltag_poses],
+                parameters=[landmark_poses],
             ),
             Node(
                 package="pie_waiterbot",
@@ -33,7 +33,7 @@ def generate_launch_description():
             Node(
                 package="pie_waiterbot",
                 executable="goal_driver",
-                parameters=[apriltag_poses, robot_info],
+                parameters=[landmark_poses, robot_info],
             ),
             Node(
                 package="pie_waiterbot",

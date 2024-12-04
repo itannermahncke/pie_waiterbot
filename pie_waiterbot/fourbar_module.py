@@ -3,13 +3,16 @@ from rclpy.node import Node
 from std_msgs.msg import String, Bool
 
 
-class FourbarModule(Node):
+class FourbarModuleNode(Node):
     """
-    Receives messages from microcontroller and decides what to do with the
-    fourbar module.
+    This node controls the actions of the tray module based on the robot's
+    current goal status.
     """
 
     def __init__(self):
+        """
+        Initializes an instance of the FourbarModuleNode.
+        """
         super().__init__("fourbar_module")
 
         # state controls
@@ -30,7 +33,7 @@ class FourbarModule(Node):
             Bool, "strain_gauge", self.strain_gauge_callback, 10
         )
 
-        # change the name of this topic
+        # subscribers to goal topics
         self.goal_subscriber = self.create_subscription(
             Bool, "goal_status", self.goal_callback, 10
         )
@@ -38,6 +41,7 @@ class FourbarModule(Node):
             String, "goal_id", self.location_callback, 10
         )
 
+        # publishing four bar status
         self.angle_publisher = self.create_publisher(String, "fourbar_module_angle", 10)
         self.status_publisher = self.create_publisher(
             String, "fourbar_module_status", 10
@@ -60,7 +64,9 @@ class FourbarModule(Node):
 
     def strain_gauge_callback(self, strain: Bool):
         """
-        Takes data from the strain_gauge topic and changes the task status
+        Takes data from the strain_gauge topic and changes the task status. If
+        the strain gauge detects a change (plate added or removed), the four-bar
+        will retract.
         """
         if self.task_status == 1:
             if not strain.data:
@@ -82,7 +88,7 @@ class FourbarModule(Node):
 
     def location_callback(self, goal_id: String):
         """
-        Takes an int specifying target location
+        If the robot has a new goal, reset the four bar and save the new goal.
         """
         if not goal_id.data == self.destination:
             self.task_status = 0
@@ -90,7 +96,7 @@ class FourbarModule(Node):
 
     def timer_callback(self):
         """
-        Publishes data
+        Publishes the four bar status.
         """
         if self.task_status == 2:
             self.time = self.time + self.publisher_tick_rate
@@ -124,7 +130,7 @@ class FourbarModule(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    fourbar_module = FourbarModule()
+    fourbar_module = FourbarModuleNode()
 
     rclpy.spin(fourbar_module)
 

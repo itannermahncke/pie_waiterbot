@@ -7,7 +7,7 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
 from std_msgs.msg import String, Bool
-from geometry_msgs.msg import Pose, Twist, Transform
+from geometry_msgs.msg import Pose, Twist
 
 from tf_transformations import euler_from_quaternion
 
@@ -16,9 +16,9 @@ import math
 
 class GoalDriverNode(Node):
     """
-    Given a pose estimate, compare the robot pose to the known location of
-    AprilTags, knowing both are in the world frame. Calculate robot Twist
-    and publish to a topic available to the MicroROS node.
+    This node, given a pose estimate, compares the robot pose to its current
+    goal, knowing both are in the world frame. Determines a Twist message that
+    best corrects the error between the two and publish it.
     """
 
     def __init__(self):

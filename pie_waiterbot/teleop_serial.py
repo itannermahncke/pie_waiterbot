@@ -12,12 +12,14 @@ from geometry_msgs.msg import Twist
 
 class TeleopSerialNode(Node):
     """
-    Node that allows teleoperated control of the Waiterbot.
+    Node that allows teleoperated control of the Waiterbot. This is meant to be
+    run independently of the rest of the system for the purposes of testing
+    the drivetrain motors.
     """
 
     def __init__(self):
         """
-        Initialize an instance of the TeleopNode.
+        Initialize an instance of the TeleopSerialNode.
         """
         # initialize from base Node class
         super().__init__("teleop_serial")
