@@ -27,10 +27,11 @@ class SerialAdapterNode(Node):
         self.fourbar_angle = self.create_subscription(
             String, "fourbar_module_angle", self.fourbar_callback, 10
         )
-        self.declare_parameter("serial_write", rclpy.Parameter.Type.STRING)
+        """self.declare_parameter("serial_write", rclpy.Parameter.Type.STRING)
         serial_write = (
             self.get_parameter("serial_write").get_parameter_value().string_value
-        )
+        )"""
+        serial_write = "HELLO"
         try:
             self.write_port = serial.Serial(serial_write, baudRate, timeout=1)
             self.get_logger().info("Write serial connected")
@@ -39,11 +40,12 @@ class SerialAdapterNode(Node):
             self.get_logger().info(f"Write serial failed to connect")
 
         # for reading
-        self.read_timer = self.create_timer(0.01, self.read_callback)
+        """self.read_timer = self.create_timer(0.01, self.read_callback)
         self.declare_parameter("serial_read", rclpy.Parameter.Type.STRING)
         serial_read = (
             self.get_parameter("serial_read").get_parameter_value().string_value
-        )
+        )"""
+        serial_read = "HELLO"
         try:
             self.read_port = serial.Serial(serial_read, baudRate, timeout=1)
             self.get_logger().info("Read serial connected")
@@ -53,7 +55,13 @@ class SerialAdapterNode(Node):
 
         # publishers
         self.goal_publisher = self.create_publisher(String, "goal_id", 10)
-        self.serial_publisher = self.create_publisher(String, "serial", 10)
+        self.serial_publisher = self.create_publisher(String, "drivetrain_encoder", 10)
+        self.serial_publisher = self.create_publisher(String, "red_button", 10)
+        self.serial_publisher = self.create_publisher(String, "green_button", 10)
+        self.serial_publisher = self.create_publisher(String, "blue_button", 10)
+        self.serial_publisher = self.create_publisher(String, "imu", 10)
+        self.serial_publisher = self.create_publisher(String, "strain_gauge", 10)
+        self.serial_publisher = self.create_publisher(String, "color_sensor", 10)
 
     def cmd_callback(self, twist: Twist):
         """
@@ -88,9 +96,18 @@ class SerialAdapterNode(Node):
             # goal = String()
             # goal.data = data
             # self.goal_publisher.publish(goal)
-            serial_msg = String()
-            serial_msg.data = data
-            self.serial_publisher.publish(serial_msg)
+            """msg_arr = string.data.split(",")
+            if msg_arr[0] == "CL":
+                match msg_arr[1]:
+                    case "1":
+                        self.task_mode = "TRAY"
+                    case "2":
+                        self.task_mode = "DRINK"
+                    case _:
+                        self.task_mode = "TRAY"
+            if msg_arr[0] == "SG":
+                if msg_arr[1] == "false":
+                    self.task_status = 2"""
 
     def cfg_msg(self, code, msg):
         """
