@@ -17,7 +17,7 @@ class FourbarModule(Node):
         # 1: extending module
         # 2: retracting module
         # 3: just finished
-        self.task_status = 1
+        self.task_status = 0
         # TRAY or DRINKS
         self.task_mode = "TRAY"
         self.destination = None
@@ -27,7 +27,7 @@ class FourbarModule(Node):
             String, "color_sensor", self.color_callback, 10
         )
         self.strain_gauge_subsciber = self.create_subscription(
-            String, "strain_gauge", self.strain_gauge_callback, 10
+            Bool, "strain_gauge", self.strain_gauge_callback, 10
         )
 
         # change the name of this topic
@@ -53,19 +53,18 @@ class FourbarModule(Node):
         Takes data from the color_sensor topic and determines what module is currently
         loaded.
         """
-        if string == "1":
+        if string.data == "1":
             self.task_mode = "TRAY"
-        elif string == "2":
+        elif string.data == "2":
             self.task_mode = "DRINK"
 
-    def strain_gauge_callback(self, string: String):
+    def strain_gauge_callback(self, strain: Bool):
         """
         Takes data from the strain_gauge topic and changes the task status
         """
         if self.task_status == 1:
-            if string == "false":
+            if not strain.data:
                 self.task_status = 2
-        print("HI")
 
     def goal_callback(self, boolean: Bool):
         """
@@ -116,7 +115,7 @@ class FourbarModule(Node):
                 cur_angle = 0
 
         angle.data = str(cur_angle)
-        # self.get_logger().info(f"angle: {cur_angle}, status: {self.task_status}")
+        self.get_logger().info(f"angle: {cur_angle}, status: {self.task_status}")
 
         self.status_publisher.publish(status)
         self.angle_publisher.publish(angle)
