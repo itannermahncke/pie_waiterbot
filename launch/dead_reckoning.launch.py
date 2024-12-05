@@ -32,13 +32,23 @@ def generate_launch_description():
             ),
             Node(
                 package="pie_waiterbot",
-                executable="goal_driver",
+                executable="goal_reach",
                 parameters=[landmark_poses, robot_info],
             ),
             Node(
                 package="pie_waiterbot",
                 executable="serial_adapter",
                 parameters=[serial_config],
+            ),
+            Node(
+                package="pie_waiterbot",
+                executable="fourbar_module",
+                parameters=[robot_info],
+            ),
+            Node(
+                package="pie_waiterbot",
+                executable="path_planning",
+                parameters=[landmark_poses],
             ),
         ]
     )

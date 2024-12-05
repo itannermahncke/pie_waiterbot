@@ -20,12 +20,16 @@ def generate_launch_description():
         )
     )
 
-    serial_config = os.path.join(
-        get_package_share_directory("pie_waiterbot"), "serial.yaml"
+    landmark_poses = os.path.join(
+        get_package_share_directory("pie_waiterbot"), "landmark_poses.yaml"
     )
 
-    apriltag_poses = os.path.join(
-        get_package_share_directory("pie_waiterbot"), "apriltag_poses.yaml"
+    robot_info = os.path.join(
+        get_package_share_directory("pie_waiterbot"), "robot_info.yaml"
+    )
+
+    serial_config = os.path.join(
+        get_package_share_directory("pie_waiterbot"), "serial.yaml"
     )
 
     return LaunchDescription(
@@ -38,17 +42,32 @@ def generate_launch_description():
             Node(
                 package="pie_waiterbot",
                 executable="pose_estimation",
-                parameters=[apriltag_poses],
+                parameters=[landmark_poses],
             ),
             Node(
                 package="pie_waiterbot",
-                executable="goal_driver",
-                parameters=[apriltag_poses],
+                executable="map_maker",
+                parameters=[landmark_poses],
+            ),
+            Node(
+                package="pie_waiterbot",
+                executable="goal_reach",
+                parameters=[landmark_poses, robot_info],
             ),
             Node(
                 package="pie_waiterbot",
                 executable="serial_adapter",
                 parameters=[serial_config],
+            ),
+            Node(
+                package="pie_waiterbot",
+                executable="fourbar_module",
+                parameters=[robot_info],
+            ),
+            Node(
+                package="pie_waiterbot",
+                executable="path_planning",
+                parameters=[landmark_poses],
             ),
         ]
     )
