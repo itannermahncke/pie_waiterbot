@@ -56,7 +56,7 @@ class PathPlanningNode(Node):
         # attributes
         self.latest_goal_id = None
         self.goal_status = True  # start frozen
-        self.module_status = ""
+        self.module_status = 0  # assume fine
         self.request_queue = deque()
 
     def latest_goal_callback(self, goal: String):
