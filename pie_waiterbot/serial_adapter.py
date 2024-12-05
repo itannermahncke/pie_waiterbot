@@ -21,13 +21,13 @@ class SerialAdapterNode(Node):
         baudRate = 9600
 
         # retrieve outgoing codes
-        self.declare_parameter("drivetrain_code", rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter("drivetrain_code", rclpy.Parameter.Type.STRING)
         self.dt_code = (
-            self.get_parameter("drivetrain_code").get_parameter_value().integer_value
+            self.get_parameter("drivetrain_code").get_parameter_value().string_value
         )
-        self.declare_parameter("stepper_code", rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter("stepper_code", rclpy.Parameter.Type.STRING)
         self.st_code = (
-            self.get_parameter("stepper_code").get_parameter_value().integer_value
+            self.get_parameter("stepper_code").get_parameter_value().string_value
         )
 
         # retrieve goals associated w/ buttons and place in dict
