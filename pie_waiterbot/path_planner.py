@@ -6,7 +6,7 @@ from rclpy.time import Time
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
-from std_msgs.msg import String, Bool
+from std_msgs.msg import String, Bool, Empty
 from geometry_msgs.msg import Pose, Twist
 
 from tf_transformations import euler_from_quaternion
@@ -14,7 +14,7 @@ from tf_transformations import euler_from_quaternion
 import math
 
 
-class GoalDriverNode(Node):
+class PathPlanningNode(Node):
     """
     This node, given a pose estimate, compares the robot pose to its current
     goal, knowing both are in the world frame. Determines a Twist message that
@@ -23,9 +23,9 @@ class GoalDriverNode(Node):
 
     def __init__(self):
         """
-        Initialize an instance of the GoalDriverNode class.
+        Initialize an instance of the PathPlanningNode class.
         """
-        super().__init__("goal_driver", allow_undeclared_parameters=True)
+        super().__init__("path_planner", allow_undeclared_parameters=True)
 
         # apriltag pose management
         self.tf_buffer = Buffer()
@@ -44,15 +44,19 @@ class GoalDriverNode(Node):
         )
 
         # goal management
-        self.goal_subscriber = self.create_subscription(
+        self.goal_id_subscriber = self.create_subscription(
             String, "goal_id", self.goal_update_callback, 10
         )
+        self.goal_id_publisher = self.create_publisher(String, "goal_id", 10)
         self.goal_status_pub = self.create_publisher(Bool, "goal_status", 10)
         self.goal_status_sub = self.create_subscription(
             Bool, "goal_status", self.goal_status_callback, 10
         )
 
         # drive management
+        self.estop_subscriber = self.create_subscription(
+            Bool, "e_stop", self.estop_callback, 10
+        )
         self.pose_subscriber = self.create_subscription(
             Pose, "pose_estimate", self.pose_update_callback, 10
         )
@@ -89,6 +93,24 @@ class GoalDriverNode(Node):
         """
         self.goal_status = status_msg.data
 
+        # if goal was met, return to kitchen (or wait)
+        if self.goal_status is True:
+            if self.latest_goal_id != "kitchen":
+                self.goal_id_publisher.publish(String(data="kitchen"))
+
+    def estop_callback(self):
+        """
+        Immediately stops the motors and prevents further motor commands. Node
+        requires relaunch when this occurs for robot to continue working.
+        """
+        # kills timer and sends a zero-velocity twist
+        self.speed_interval.cancel()
+        self.speeds_publisher.publish(Twist())
+
+        # resets goals
+        self.latest_goal_id = None
+        self.goal_stats = True
+
     def pose_update_callback(self, pose: Pose):
         """
         Callback function when a new pose estimate is received. Transforms the
@@ -106,7 +128,7 @@ class GoalDriverNode(Node):
 
     def control_loop(self):
         """
-        Calculate wheel speeds and publish to a topic accessible to the microcontroller.
+        Calculate wheel speeds and publish.
         """
         twist = Twist()
         # only do this if goal exists and is not yet met
@@ -146,9 +168,9 @@ class GoalDriverNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    goal_driver = GoalDriverNode()
-    rclpy.spin(goal_driver)
-    goal_driver.destroy_node()
+    node = PathPlanningNode()
+    rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
 
 

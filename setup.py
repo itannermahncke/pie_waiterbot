@@ -25,9 +25,8 @@ setup(
         "console_scripts": [
             "serial_adapter = pie_waiterbot.serial_adapter:main",
             "teleop_serial = pie_waiterbot.teleop_serial:main",
-            "goal_driver = pie_waiterbot.goal_driver:main",
+            "path_planner = pie_waiterbot.path_planner:main",
             "pose_estimation = pie_waiterbot.pose_estimation:main",
-            "webcam_driver = pie_waiterbot.webcam_driver:main",
             "dead_reckoning = pie_waiterbot.dead_reckoning:main",
             "map_maker = pie_waiterbot.map_maker:main",
             "fourbar_module = pie_waiterbot.fourbar_module:main",
