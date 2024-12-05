@@ -52,16 +52,23 @@ class SerialAdapterNode(Node):
             self.get_logger().info("Read serial failed to connect")
 
         # publishers
+        prefix = "sensor"
         self.goal_publisher = self.create_publisher(String, "goal_id", 10)
         self.drivetrain_publisher = self.create_publisher(
-            Float32MultiArray, "drivetrain_encoder", 10
+            Float32MultiArray, f"{prefix}/drivetrain_encoder", 10
         )
-        self.red_publisher = self.create_publisher(Bool, "red_button", 10)
-        self.green_publisher = self.create_publisher(Bool, "green_button", 10)
-        self.blue_publisher = self.create_publisher(Bool, "blue_button", 10)
-        self.imu_publisher = self.create_publisher(Float32MultiArray, "imu", 10)
-        self.strain_publisher = self.create_publisher(Bool, "strain_gauge", 10)
-        self.color_publisher = self.create_publisher(String, "color_sensor", 10)
+        self.red_publisher = self.create_publisher(Bool, f"{prefix}/red_button", 10)
+        self.green_publisher = self.create_publisher(Bool, f"{prefix}/green_button", 10)
+        self.blue_publisher = self.create_publisher(Bool, f"{prefix}/blue_button", 10)
+        self.imu_publisher = self.create_publisher(
+            Float32MultiArray, f"{prefix}/imu", 10
+        )
+        self.strain_publisher = self.create_publisher(
+            Bool, f"{prefix}/strain_gauge", 10
+        )
+        self.color_publisher = self.create_publisher(
+            String, f"{prefix}/color_sensor", 10
+        )
 
     def cmd_callback(self, twist: Twist):
         """
