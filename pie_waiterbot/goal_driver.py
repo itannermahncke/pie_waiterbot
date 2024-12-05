@@ -32,9 +32,11 @@ class GoalDriverNode(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # parameters
-        self.declare_parameter("apriltag_ids", rclpy.Parameter.Type.STRING_ARRAY)
-        self.apriltag_id_list = (
-            self.get_parameter("apriltag_ids").get_parameter_value().string_array_value
+        self.declare_parameter("destination_ids", rclpy.Parameter.Type.STRING_ARRAY)
+        self.destinations = (
+            self.get_parameter("destination_ids")
+            .get_parameter_value()
+            .string_array_value
         )
         self.declare_parameter("initial_pose", rclpy.Parameter.Type.DOUBLE_ARRAY)
         self.latest_coords = (
@@ -73,7 +75,7 @@ class GoalDriverNode(Node):
         Callback function when a button press indicates that the robot has a
         new goal AprilTag to navigate towards.
         """
-        if goal_id.data in self.apriltag_id_list:
+        if goal_id.data in self.destinations:
             self.latest_goal_id = goal_id.data
             self.goal_status_pub.publish(Bool(data=False))
         else:
