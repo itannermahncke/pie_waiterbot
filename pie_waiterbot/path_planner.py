@@ -12,20 +12,22 @@ from geometry_msgs.msg import Pose, Twist
 from tf_transformations import euler_from_quaternion
 
 import math
+from collections import deque
 
 
 class PathPlanningNode(Node):
     """
-    This node, given a pose estimate, compares the robot pose to its current
-    goal, knowing both are in the world frame. Determines a Twist message that
-    best corrects the error between the two and publish it.
+    This node handles the many different ways to trigger a goal change and
+    maintains control of the robot's next goal. It does not allow essential
+    actions such as module movement to be interrupted, but holds on to
+    requests until they can be fulfilled.
     """
 
     def __init__(self):
         """
         Initialize an instance of the PathPlanningNode class.
         """
-        super().__init__("path_planner", allow_undeclared_parameters=True)
+        super().__init__("path_planning", allow_undeclared_parameters=True)
 
         # apriltag pose management
         self.tf_buffer = Buffer()
@@ -38,132 +40,77 @@ class PathPlanningNode(Node):
             .get_parameter_value()
             .string_array_value
         )
-        self.declare_parameter("initial_pose", rclpy.Parameter.Type.DOUBLE_ARRAY)
-        self.latest_coords = (
-            self.get_parameter("initial_pose").get_parameter_value().double_array_value
-        )
+        self.kitchen = self.destinations[0]
 
         # goal management
-        self.goal_id_subscriber = self.create_subscription(
-            String, "goal_id", self.goal_update_callback, 10
+        self.goal_id_publisher = self.create_publisher(String, "latest_goal", 10)
+        self.goal_id_sub = self.create_subscription(
+            String, "latest_goal", self.latest_goal_callback, 10
         )
-        self.goal_id_publisher = self.create_publisher(String, "goal_id", 10)
-        self.goal_status_pub = self.create_publisher(Bool, "goal_status", 10)
+
+        # sources of goal change
         self.goal_status_sub = self.create_subscription(
             Bool, "goal_status", self.goal_status_callback, 10
         )
-
-        # drive management
-        self.estop_subscriber = self.create_subscription(
-            Bool, "e_stop", self.estop_callback, 10
+        self.request_sub = self.create_subscription(
+            String, "goal_request", self.goal_status_callback, 10
         )
-        self.pose_subscriber = self.create_subscription(
-            Pose, "pose_estimate", self.pose_update_callback, 10
+        self.tray_status_sub = self.create_subscription(
+            String, "fourbar_module_status", self.fourbar_status_callback, 10
         )
-        self.speed_interval = self.create_timer(0.1, self.control_loop)
-        self.speeds_publisher = self.create_publisher(Twist, "cmd_vel", 10)
 
-        # goal attributes
+        # attributes
         self.latest_goal_id = None
         self.goal_status = True  # start frozen
+        self.module_status = ""
+        self.request_queue = deque()
 
-        # control
-        self.ang_K = 0.5
-        self.lin_K = 0.8
-        self.max_ang_vel = 0.9436
-        self.max_lin_vel = 0.2720
-        self.tolerance = 0.05
-
-    def goal_update_callback(self, goal_id: String):
+    def latest_goal_callback(self, goal: String):
         """
-        Callback function when a button press indicates that the robot has a
-        new goal AprilTag to navigate towards.
+        Update local latest goal.
         """
-        if goal_id.data in self.destinations:
-            self.latest_goal_id = goal_id.data
-            self.goal_status_pub.publish(Bool(data=False))
-        else:
-            self.get_logger().info(
-                f"ERROR: ID {goal_id.data} NOT FOUND IN KNOWN ID LIST."
-            )
+        self.latest_goal_id = goal.data
 
     def goal_status_callback(self, status_msg: Bool):
         """
         Update status attribute.
         """
+        # save latest goal
         self.goal_status = status_msg.data
 
-        # if goal was met, return to kitchen (or wait)
-        if self.goal_status is True:
-            if self.latest_goal_id != "kitchen":
-                self.goal_id_publisher.publish(String(data="kitchen"))
+        # if true, determine next destination
+        if self.goal_status:
+            # always prioritize a return to the kitchen
+            if self.latest_goal_id != self.kitchen:
+                self.request_queue.appendleft(self.kitchen)
+            # else, grab the oldest goal request
+            current_goal = self.request_queue.popleft()
 
-    def estop_callback(self):
-        """
-        Immediately stops the motors and prevents further motor commands. Node
-        requires relaunch when this occurs for robot to continue working.
-        """
-        # kills timer and sends a zero-velocity twist
-        self.speed_interval.cancel()
-        self.speeds_publisher.publish(Twist())
+            # wait for the robot to be in an acceptable state to start a new goal
+            while self.module_status in (1, 2) or not self.goal_status:
+                self.get_logger().info("Must complete current task first")
 
-        # resets goals
-        self.latest_goal_id = None
-        self.goal_stats = True
+            # publish new goal
+            self.goal_id_publisher.publish(current_goal)
 
-    def pose_update_callback(self, pose: Pose):
+    def fourbar_status_callback(self, status_msg: String):
         """
-        Callback function when a new pose estimate is received. Transforms the
-        pose into usable coordinates.
+        0: not started
+        1: extend the module
+        2: retracting the module
+        3: Just finished
         """
-        heading = euler_from_quaternion(
-            (
-                pose.orientation.x,
-                pose.orientation.y,
-                pose.orientation.z,
-                pose.orientation.w,
-            )
-        )[2]
-        self.latest_coords = (pose.position.x, pose.position.y, heading)
+        self.module_status = status_msg.data
 
-    def control_loop(self):
+    def request_callback(self, request: String):
         """
-        Calculate wheel speeds and publish.
+        Handles a goal change request from a button.
         """
-        twist = Twist()
-        # only do this if goal exists and is not yet met
-        if self.latest_goal_id is not None and not self.goal_status:
-            # calculate error
-            lin_error, ang_error = self.calculate_error()
-
-            # if error is significant, correct
-            if lin_error > self.tolerance or ang_error > self.tolerance:
-                twist.linear.x = self.max_lin_vel
-                twist.angular.z = min(ang_error * self.ang_K, self.max_ang_vel)
-            # if within tolerance, stop and change goal state
-            else:
-                self.goal_status_pub.publish(Bool(data=True))
-
-            # publish
-            self.get_logger().info(
-                f"publishing lin: {twist.linear.x} ang {twist.angular.z}"
-            )
-            self.speeds_publisher.publish(twist)
-
-    def calculate_error(self):
-        """
-        Calculate error between current heading and ideal heading to approach AprilTag.
-        """
-        goal_xy = self.tf_buffer.lookup_transform(
-            "world", self.latest_goal_id, Time()
-        ).transform.translation
-        delta_x = goal_xy.x - self.latest_coords[0]
-        delta_y = goal_xy.y - self.latest_coords[1]
-        lin_error = math.sqrt(delta_x**2 + delta_y**2)
-        ang_error = math.atan2(delta_y, delta_x) - self.latest_coords[2]
-
-        self.get_logger().info(f"lin_error: {lin_error} | ang_error: {ang_error}")
-        return lin_error, ang_error
+        # only handle verified destinations
+        if request.data in self.destinations:
+            self.request_queue.append(request.data)
+        else:
+            self.get_logger().info(f"Request {request.data} not in destinations!")
 
 
 def main(args=None):
