@@ -110,44 +110,45 @@ class SerialAdapterNode(Node):
         # decode data
         if self.read_port is not None:
             try:
-                data = self.read_port.readline().decode()
+                line_data = self.read_port.readline().decode()
             except:
                 # decode failure
-                data = "FAIL"
+                line_data = "FAIL"
         else:
             return
 
         # at this point, data should be present
-        self.get_logger().info(f"parsing decoded serial line: {data}")
-        if len(data) > 0 and data != "FAIL":
+        self.get_logger().info(f"parsing decoded serial line: {line_data}")
+        if len(line_data) > 0 and line_data != "FAIL":
             # split up message and sort by letter code
-            msg_arr = data.split(",")
+            msg_code = line_data[0:2]
+            msg_data = line_data[2:].split(",")
 
             # first, handle buttons
-            if msg_arr[0] in self.button_dest_table.keys():
-                self.goal_request_publisher.publish(self.button_dest_table[msg_arr[0]])
+            if msg_code in self.button_dest_table.keys():
+                self.goal_request_publisher.publish(self.button_dest_table[msg_code])
             # encoder data
-            elif msg_arr[0] == "en":
+            elif msg_code == "en":
                 self.drivetrain_publisher.publish(
-                    Float32MultiArray(data=[float(msg_arr[1]), float(msg_arr[2])])
+                    Float32MultiArray(data=[float(msg_data[0]), float(msg_data[1])])
                 )
             # IMU data
-            elif msg_arr[0] == "mu":
+            elif msg_code == "mu":
                 self.imu_publisher.publish(
-                    Float32MultiArray(data=[float(msg_arr[1]), float(msg_arr[2])])
+                    Float32MultiArray(data=[float(msg_data[0]), float(msg_data[1])])
                 )
             # strain gauge
-            elif msg_arr[0] == "sg":
-                if msg_arr[1] == "0":
+            elif msg_code == "sg":
+                if msg_data[0] == "0":
                     boolean = False
-                if msg_arr[1] == "1":
+                if msg_data[0] == "1":
                     boolean = True
                 else:
                     return
                 self.strain_publisher.publish(Bool(data=boolean))
             # color sensor
-            elif msg_arr[0] == "cl":
-                self.color_publisher.publish(String(data=msg_arr[1]))
+            elif msg_code == "cl":
+                self.color_publisher.publish(String(data=msg_data[0]))
 
     def cfg_msg(self, code, msg) -> str:
         """
