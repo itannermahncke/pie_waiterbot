@@ -121,7 +121,7 @@ class SerialAdapterNode(Node):
         if data == "FAIL":
             self.get_logger().info("DECODE FAILURE")
             return
-
+        self.get_logger().info(f"parsing decoded serial line: {data}")
         if len(data) > 0:
             # split up message and sort by letter code
             msg_arr = data.split(",")
