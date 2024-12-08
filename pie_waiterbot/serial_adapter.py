@@ -112,14 +112,13 @@ class SerialAdapterNode(Node):
             try:
                 line_data = self.read_port.readline().decode()
             except:
-                # decode failure
-                line_data = "FAIL"
+                return
         else:
             return
 
         # at this point, data should be present
-        self.get_logger().info(f"parsing decoded serial line: {line_data}")
         if len(line_data) > 0 and line_data != "FAIL":
+            self.get_logger().info(f"parsing decoded serial line: {line_data}")
             # split up message and sort by letter code
             msg_code = line_data[0:2]
             msg_data = line_data[2:].split(",")
