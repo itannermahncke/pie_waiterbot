@@ -39,7 +39,7 @@ def generate_launch_description():
             Node(
                 package="pie_waiterbot",
                 executable="pose_estimation",
-                parameters=[apriltag_poses],
+                parameters=[landmark_poses],
             ),
         ]
     )

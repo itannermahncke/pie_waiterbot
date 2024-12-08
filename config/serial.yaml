@@ -4,3 +4,8 @@
     serial_read: "/dev/ttyACM1"
     drivetrain_code: "0"
     stepper_code: "1"
+
+    button_list: ['BB', 'BG', 'BR']
+    BB: "table1"
+    BG: "table2"
+    BR: "kitchen"

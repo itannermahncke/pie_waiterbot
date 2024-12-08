@@ -21,16 +21,25 @@ class SerialAdapterNode(Node):
         baudRate = 9600
 
         # retrieve outgoing codes
-        # initial pose
-        self.declare_parameter("drivetrain_code", rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter("drivetrain_code", rclpy.Parameter.Type.STRING)
         self.dt_code = (
-            self.get_parameter("drivetrain_code").get_parameter_value().integer_value
+            self.get_parameter("drivetrain_code").get_parameter_value().string_value
         )
-        # initial pose
-        self.declare_parameter("stepper_code", rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter("stepper_code", rclpy.Parameter.Type.STRING)
         self.st_code = (
-            self.get_parameter("stepper_code").get_parameter_value().integer_value
+            self.get_parameter("stepper_code").get_parameter_value().string_value
         )
+
+        # retrieve goals associated w/ buttons and place in dict
+        self.button_dest_table = {}
+        self.declare_parameter("button_list", rclpy.Parameter.Type.STRING_ARRAY)
+        for code in (
+            self.get_parameter("button_list").get_parameter_value().string_array_value
+        ):
+            self.declare_parameter(code, rclpy.Parameter.Type.STRING)
+            self.button_dest_table[code] = (
+                self.get_parameter(code).get_parameter_value().string_value
+            )
 
         # subscriptions to outgoing data
         self.speeds_subscriber = self.create_subscription(
@@ -41,13 +50,10 @@ class SerialAdapterNode(Node):
         )
 
         # publishers for incoming data
-        self.goal_publisher = self.create_publisher(String, "goal_id", 10)
+        self.goal_request_publisher = self.create_publisher(String, "goal_request", 10)
         self.drivetrain_publisher = self.create_publisher(
             Float32MultiArray, "drivetrain_encoder", 10
         )
-        self.red_publisher = self.create_publisher(Bool, "red_button", 10)
-        self.green_publisher = self.create_publisher(Bool, "green_button", 10)
-        self.blue_publisher = self.create_publisher(Bool, "blue_button", 10)
         self.imu_publisher = self.create_publisher(Float32MultiArray, "imu", 10)
         self.strain_publisher = self.create_publisher(Bool, "strain_gauge", 10)
         self.color_publisher = self.create_publisher(String, "color_sensor", 10)
@@ -115,35 +121,21 @@ class SerialAdapterNode(Node):
         if len(data) > 0:
             # split up message and sort by letter code
             msg_arr = data.split(",")
-            if msg_arr[0] == "EN":
+
+            # first, handle buttons
+            if msg_arr[0] in self.button_dest_table.keys():
+                self.goal_request_publisher.publish(self.button_dest_table[msg_arr[0]])
+            # encoder data
+            elif msg_arr[0] == "EN":
                 self.drivetrain_publisher.publish(
                     Float32MultiArray(data=[float(msg_arr[1]), float(msg_arr[2])])
                 )
-            elif msg_arr[0] == "BR":
-                boolean = False
-                if msg_arr[1] == "1":
-                    boolean = True
-                self.red_publisher.publish(Bool(data=boolean))
-            elif msg_arr[0] == "BG":
-                if msg_arr[1] == "0":
-                    boolean = False
-                if msg_arr[1] == "1":
-                    boolean = True
-                else:
-                    return
-                self.green_publisher.publish(Bool(data=boolean))
-            elif msg_arr[0] == "BB":
-                if msg_arr[1] == "0":
-                    boolean = False
-                if msg_arr[1] == "1":
-                    boolean = True
-                else:
-                    return
-                self.blue_publisher.publish(Bool(data=boolean))
+            # IMU data
             elif msg_arr[0] == "MU":
                 self.imu_publisher.publish(
                     Float32MultiArray(data=[float(msg_arr[1]), float(msg_arr[2])])
                 )
+            # strain gauge
             elif msg_arr[0] == "SG":
                 if msg_arr[1] == "0":
                     boolean = False
@@ -152,10 +144,11 @@ class SerialAdapterNode(Node):
                 else:
                     return
                 self.strain_publisher.publish(Bool(data=boolean))
+            # color sensor
             elif msg_arr[0] == "CL":
                 self.color_publisher.publish(String(data=msg_arr[1]))
 
-    def cfg_msg(self, code, msg):
+    def cfg_msg(self, code, msg) -> str:
         """
         Reconfigure messages sent to the microcontroller in a format that could
         be interepreted by the microcontroller.

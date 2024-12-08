@@ -25,7 +25,8 @@ setup(
         "console_scripts": [
             "serial_adapter = pie_waiterbot.serial_adapter:main",
             "teleop_serial = pie_waiterbot.teleop_serial:main",
-            "path_planner = pie_waiterbot.path_planner:main",
+            "path_planning = pie_waiterbot.path_planning:main",
+            "goal_reach = pie_waiterbot.goal_reach:main",
             "pose_estimation = pie_waiterbot.pose_estimation:main",
             "dead_reckoning = pie_waiterbot.dead_reckoning:main",
             "map_maker = pie_waiterbot.map_maker:main",

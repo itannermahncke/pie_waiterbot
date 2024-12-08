@@ -14,7 +14,7 @@ from tf_transformations import euler_from_quaternion
 import math
 
 
-class PathPlanningNode(Node):
+class ReachGoalNode(Node):
     """
     This node, given a pose estimate, compares the robot pose to its current
     goal, knowing both are in the world frame. Determines a Twist message that
@@ -25,7 +25,7 @@ class PathPlanningNode(Node):
         """
         Initialize an instance of the PathPlanningNode class.
         """
-        super().__init__("path_planner", allow_undeclared_parameters=True)
+        super().__init__("goal_reach", allow_undeclared_parameters=True)
 
         # apriltag pose management
         self.tf_buffer = Buffer()
@@ -45,23 +45,19 @@ class PathPlanningNode(Node):
 
         # goal management
         self.goal_id_subscriber = self.create_subscription(
-            String, "goal_id", self.goal_update_callback, 10
+            String, "latest_goal", self.goal_update_callback, 10
         )
-        self.goal_id_publisher = self.create_publisher(String, "goal_id", 10)
         self.goal_status_pub = self.create_publisher(Bool, "goal_status", 10)
-        self.goal_status_sub = self.create_subscription(
-            Bool, "goal_status", self.goal_status_callback, 10
-        )
 
         # drive management
-        self.estop_subscriber = self.create_subscription(
-            Bool, "e_stop", self.estop_callback, 10
-        )
         self.pose_subscriber = self.create_subscription(
             Pose, "pose_estimate", self.pose_update_callback, 10
         )
         self.speed_interval = self.create_timer(0.1, self.control_loop)
         self.speeds_publisher = self.create_publisher(Twist, "cmd_vel", 10)
+        self.estop_subscriber = self.create_subscription(
+            Bool, "e_stop", self.estop_callback, 10
+        )
 
         # goal attributes
         self.latest_goal_id = None
@@ -73,6 +69,19 @@ class PathPlanningNode(Node):
         self.max_ang_vel = 0.9436
         self.max_lin_vel = 0.2720
         self.tolerance = 0.05
+
+    def estop_callback(self, _: Empty):
+        """
+        Immediately stops the motors and prevents further motor commands. Node
+        requires relaunch when this occurs for robot to continue working.
+        """
+        # kills timer and sends a zero-velocity twist
+        self.speed_interval.cancel()
+        self.speeds_publisher.publish(Twist())
+
+        # resets goals
+        self.latest_goal_id = None
+        self.goal_stats = True
 
     def goal_update_callback(self, goal_id: String):
         """
@@ -86,30 +95,6 @@ class PathPlanningNode(Node):
             self.get_logger().info(
                 f"ERROR: ID {goal_id.data} NOT FOUND IN KNOWN ID LIST."
             )
-
-    def goal_status_callback(self, status_msg: Bool):
-        """
-        Update status attribute.
-        """
-        self.goal_status = status_msg.data
-
-        # if goal was met, return to kitchen (or wait)
-        if self.goal_status is True:
-            if self.latest_goal_id != "kitchen":
-                self.goal_id_publisher.publish(String(data="kitchen"))
-
-    def estop_callback(self):
-        """
-        Immediately stops the motors and prevents further motor commands. Node
-        requires relaunch when this occurs for robot to continue working.
-        """
-        # kills timer and sends a zero-velocity twist
-        self.speed_interval.cancel()
-        self.speeds_publisher.publish(Twist())
-
-        # resets goals
-        self.latest_goal_id = None
-        self.goal_stats = True
 
     def pose_update_callback(self, pose: Pose):
         """
@@ -168,7 +153,7 @@ class PathPlanningNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = PathPlanningNode()
+    node = ReachGoalNode()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
