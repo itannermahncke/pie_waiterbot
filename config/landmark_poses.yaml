@@ -1,10 +1,12 @@
 /**:
   ros__parameters:
     apriltag_ids: ['test1']
-    destination_ids: ['kitchen', table1']
+    destination_ids: ['kitchen', 'table1', 'table2', 'table3']
 
     test1_translation: [5.0, 5.0, 0.0]
     test1_rotation: [0.0, 0.0, 0.0]
     
-    kitchen_coords: [0.0, 0.0]
-    table1_coords: [2.0, 3.0]
+    kitchen_coords: [0.0, 0.0, 0.0]
+    table1_coords: [2.0, 3.0, 0.0]
+    table2_coords: [0.0, 4.0, 0.0]
+    table3_coords: [4.0, 4.0, 0.0]
