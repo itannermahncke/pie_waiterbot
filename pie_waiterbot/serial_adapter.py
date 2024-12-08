@@ -127,17 +127,17 @@ class SerialAdapterNode(Node):
             if msg_arr[0] in self.button_dest_table.keys():
                 self.goal_request_publisher.publish(self.button_dest_table[msg_arr[0]])
             # encoder data
-            elif msg_arr[0] == "EN":
+            elif msg_arr[0] == "en":
                 self.drivetrain_publisher.publish(
                     Float32MultiArray(data=[float(msg_arr[1]), float(msg_arr[2])])
                 )
             # IMU data
-            elif msg_arr[0] == "MU":
+            elif msg_arr[0] == "mu":
                 self.imu_publisher.publish(
                     Float32MultiArray(data=[float(msg_arr[1]), float(msg_arr[2])])
                 )
             # strain gauge
-            elif msg_arr[0] == "SG":
+            elif msg_arr[0] == "sg":
                 if msg_arr[1] == "0":
                     boolean = False
                 if msg_arr[1] == "1":
@@ -146,7 +146,7 @@ class SerialAdapterNode(Node):
                     return
                 self.strain_publisher.publish(Bool(data=boolean))
             # color sensor
-            elif msg_arr[0] == "CL":
+            elif msg_arr[0] == "cl":
                 self.color_publisher.publish(String(data=msg_arr[1]))
         else:
             self.get_logger().warn(f"Line -{data}- failed or is empty")

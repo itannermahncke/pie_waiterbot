@@ -5,7 +5,7 @@
     drivetrain_code: "0"
     stepper_code: "1"
 
-    button_list: ['BB', 'BG', 'BR']
+    button_list: ['bb', 'bg', 'br']
     BB: "table1"
     BG: "table2"
     BR: "table3"
