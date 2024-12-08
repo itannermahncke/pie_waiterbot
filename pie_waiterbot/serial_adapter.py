@@ -9,24 +9,50 @@ import serial
 
 class SerialAdapterNode(Node):
     """
-    Receives Twist messages and transmits them serially to a microcontroller.
+    Acts as a translator for incoming (sensor data) and outgoing (motor
+    commands) information between the ROS2 node network and the robot firmware.
     """
 
     def __init__(self):
         """
-        Initialize an instance of the GoalDriverNode class.
+        Initialize an instance of the SerialAdapterNode class.
         """
         super().__init__("serial_adapter", allow_undeclared_parameters=True)
-
         baudRate = 9600
 
-        # for writing
+        # retrieve outgoing codes
+        # initial pose
+        self.declare_parameter("drivetrain_code", rclpy.Parameter.Type.INTEGER)
+        self.dt_code = (
+            self.get_parameter("drivetrain_code").get_parameter_value().integer_value
+        )
+        # initial pose
+        self.declare_parameter("stepper_code", rclpy.Parameter.Type.INTEGER)
+        self.st_code = (
+            self.get_parameter("stepper_code").get_parameter_value().integer_value
+        )
+
+        # subscriptions to outgoing data
         self.speeds_subscriber = self.create_subscription(
-            Twist, "cmd_vel", self.cmd_callback, 10
+            Twist, "cmd_vel", self.drivetrain_callback, 10
         )
         self.fourbar_angle = self.create_subscription(
             String, "fourbar_module_angle", self.fourbar_callback, 10
         )
+
+        # publishers for incoming data
+        self.goal_publisher = self.create_publisher(String, "goal_id", 10)
+        self.drivetrain_publisher = self.create_publisher(
+            Float32MultiArray, "drivetrain_encoder", 10
+        )
+        self.red_publisher = self.create_publisher(Bool, "red_button", 10)
+        self.green_publisher = self.create_publisher(Bool, "green_button", 10)
+        self.blue_publisher = self.create_publisher(Bool, "blue_button", 10)
+        self.imu_publisher = self.create_publisher(Float32MultiArray, "imu", 10)
+        self.strain_publisher = self.create_publisher(Bool, "strain_gauge", 10)
+        self.color_publisher = self.create_publisher(String, "color_sensor", 10)
+
+        # for writing
         self.declare_parameter("serial_write", rclpy.Parameter.Type.STRING)
         serial_write = (
             self.get_parameter("serial_write").get_parameter_value().string_value
@@ -51,59 +77,44 @@ class SerialAdapterNode(Node):
             self.read_port = None
             self.get_logger().info("Read serial failed to connect")
 
-        # publishers
-        prefix = "sensor"
-        self.goal_publisher = self.create_publisher(String, "goal_id", 10)
-        self.drivetrain_publisher = self.create_publisher(
-            Float32MultiArray, f"{prefix}/drivetrain_encoder", 10
-        )
-        self.red_publisher = self.create_publisher(Bool, f"{prefix}/red_button", 10)
-        self.green_publisher = self.create_publisher(Bool, f"{prefix}/green_button", 10)
-        self.blue_publisher = self.create_publisher(Bool, f"{prefix}/blue_button", 10)
-        self.imu_publisher = self.create_publisher(
-            Float32MultiArray, f"{prefix}/imu", 10
-        )
-        self.strain_publisher = self.create_publisher(
-            Bool, f"{prefix}/strain_gauge", 10
-        )
-        self.color_publisher = self.create_publisher(
-            String, f"{prefix}/color_sensor", 10
-        )
-
-    def cmd_callback(self, twist: Twist):
+    def drivetrain_callback(self, twist: Twist):
         """
-        Callback function when a Twist command is received. Transmit it onto
-        the serial port for the microcontroller.
+        Callback function when a Twist message for commanding the drivetrain
+        motors is received. Transmit it onto the serial port for the
+        microcontroller.
         """
-        serial_line = self.cfg_msg("0", f"{twist.linear.x},{twist.angular.z}")
+        serial_line = self.cfg_msg(self.dt_code, f"{twist.linear.x},{twist.angular.z}")
         self.get_logger().info(f"SERIAL PUBLISH: {serial_line}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
+        else:
+            self.get_logger().info(f"Catching serial message: {serial_line}")
 
     def fourbar_callback(self, string: String):
         """
         Callback function for the fourball_module topic. Gets a String message
-        which includes an int signifying the a"ngle that the fourbar should be
+        which includes an int signifying the angle that the fourbar should be
         at. Transmit it onto the serial port of the microcontroller.
         """
-        serial_line = self.cfg_msg("1", string.data)
+        serial_line = self.cfg_msg(self.st_code, string.data)
         self.get_logger().info(f"SERIAL PUBLISH: {serial_line}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
+        else:
+            self.get_logger().info(f"Catching serial message: {serial_line}")
 
     def read_callback(self):
         """
         Decode the latest line of serial sensor data.
         """
+        # decode data or save an empty string
         if self.read_port is not None:
             data = self.read_port.readline().decode()
         else:
             data = ""
         if len(data) > 0:
-            # goal = String()
-            # goal.data = data
-            # self.goal_publisher.publish(goal)
-            msg_arr = data.data.split(",")
+            # split up message and sort by letter code
+            msg_arr = data.split(",")
             if msg_arr[0] == "EN":
                 self.drivetrain_publisher.publish(
                     Float32MultiArray(data=[float(msg_arr[1]), float(msg_arr[2])])

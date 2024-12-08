@@ -6,35 +6,37 @@ from rclpy.time import Time
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
-from std_msgs.msg import String, Bool
-from geometry_msgs.msg import Pose, Twist, Transform
+from std_msgs.msg import String, Bool, Empty
+from geometry_msgs.msg import Pose, Twist
 
 from tf_transformations import euler_from_quaternion
 
 import math
 
 
-class GoalDriverNode(Node):
+class PathPlanningNode(Node):
     """
-    Given a pose estimate, compare the robot pose to the known location of
-    AprilTags, knowing both are in the world frame. Calculate robot Twist
-    and publish to a topic available to the MicroROS node.
+    This node, given a pose estimate, compares the robot pose to its current
+    goal, knowing both are in the world frame. Determines a Twist message that
+    best corrects the error between the two and publish it.
     """
 
     def __init__(self):
         """
-        Initialize an instance of the GoalDriverNode class.
+        Initialize an instance of the PathPlanningNode class.
         """
-        super().__init__("goal_driver", allow_undeclared_parameters=True)
+        super().__init__("path_planner", allow_undeclared_parameters=True)
 
         # apriltag pose management
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # parameters
-        self.declare_parameter("apriltag_ids", rclpy.Parameter.Type.STRING_ARRAY)
-        self.apriltag_id_list = (
-            self.get_parameter("apriltag_ids").get_parameter_value().string_array_value
+        self.declare_parameter("destination_ids", rclpy.Parameter.Type.STRING_ARRAY)
+        self.destinations = (
+            self.get_parameter("destination_ids")
+            .get_parameter_value()
+            .string_array_value
         )
         self.declare_parameter("initial_pose", rclpy.Parameter.Type.DOUBLE_ARRAY)
         self.latest_coords = (
@@ -42,15 +44,19 @@ class GoalDriverNode(Node):
         )
 
         # goal management
-        self.goal_subscriber = self.create_subscription(
+        self.goal_id_subscriber = self.create_subscription(
             String, "goal_id", self.goal_update_callback, 10
         )
+        self.goal_id_publisher = self.create_publisher(String, "goal_id", 10)
         self.goal_status_pub = self.create_publisher(Bool, "goal_status", 10)
         self.goal_status_sub = self.create_subscription(
             Bool, "goal_status", self.goal_status_callback, 10
         )
 
         # drive management
+        self.estop_subscriber = self.create_subscription(
+            Bool, "e_stop", self.estop_callback, 10
+        )
         self.pose_subscriber = self.create_subscription(
             Pose, "pose_estimate", self.pose_update_callback, 10
         )
@@ -62,18 +68,18 @@ class GoalDriverNode(Node):
         self.goal_status = True  # start frozen
 
         # control
-        self.ang_K = 0.1
-        self.lin_K = 0.1
+        self.ang_K = 0.5
+        self.lin_K = 0.8
         self.max_ang_vel = 0.9436
         self.max_lin_vel = 0.2720
-        self.tolerance = 0.1
+        self.tolerance = 0.05
 
     def goal_update_callback(self, goal_id: String):
         """
         Callback function when a button press indicates that the robot has a
         new goal AprilTag to navigate towards.
         """
-        if goal_id.data in self.apriltag_id_list:
+        if goal_id.data in self.destinations:
             self.latest_goal_id = goal_id.data
             self.goal_status_pub.publish(Bool(data=False))
         else:
@@ -86,6 +92,24 @@ class GoalDriverNode(Node):
         Update status attribute.
         """
         self.goal_status = status_msg.data
+
+        # if goal was met, return to kitchen (or wait)
+        if self.goal_status is True:
+            if self.latest_goal_id != "kitchen":
+                self.goal_id_publisher.publish(String(data="kitchen"))
+
+    def estop_callback(self):
+        """
+        Immediately stops the motors and prevents further motor commands. Node
+        requires relaunch when this occurs for robot to continue working.
+        """
+        # kills timer and sends a zero-velocity twist
+        self.speed_interval.cancel()
+        self.speeds_publisher.publish(Twist())
+
+        # resets goals
+        self.latest_goal_id = None
+        self.goal_stats = True
 
     def pose_update_callback(self, pose: Pose):
         """
@@ -104,7 +128,7 @@ class GoalDriverNode(Node):
 
     def control_loop(self):
         """
-        Calculate wheel speeds and publish to a topic accessible to the microcontroller.
+        Calculate wheel speeds and publish.
         """
         twist = Twist()
         # only do this if goal exists and is not yet met
@@ -114,7 +138,7 @@ class GoalDriverNode(Node):
 
             # if error is significant, correct
             if lin_error > self.tolerance or ang_error > self.tolerance:
-                twist.linear.x = min(lin_error * self.lin_K, self.max_lin_vel)
+                twist.linear.x = self.max_lin_vel
                 twist.angular.z = min(ang_error * self.ang_K, self.max_ang_vel)
             # if within tolerance, stop and change goal state
             else:
@@ -144,9 +168,9 @@ class GoalDriverNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    goal_driver = GoalDriverNode()
-    rclpy.spin(goal_driver)
-    goal_driver.destroy_node()
+    node = PathPlanningNode()
+    rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
 
 

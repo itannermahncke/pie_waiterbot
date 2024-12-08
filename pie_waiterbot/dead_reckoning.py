@@ -10,7 +10,8 @@ from tf_transformations import euler_from_quaternion, quaternion_from_euler
 
 class DeadReckoningNode(Node):
     """
-    Estimate pose with dead reckoning.
+    Estimate pose with dead reckoning. This will be phased out when visual pose
+    estimation is working, or combined with it via sensor fusion.
     """
 
     def __init__(self):
