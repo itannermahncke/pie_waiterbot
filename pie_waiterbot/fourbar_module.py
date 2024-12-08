@@ -20,7 +20,6 @@ class FourbarModuleNode(Node):
         # 1: extending module
         # 2: retracting module
         # 3: just finished
-        self.previous_status = 0
         self.task_status = 0
         # TRAY or DRINKS
         self.task_mode = "TRAY"

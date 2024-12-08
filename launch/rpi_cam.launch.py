@@ -29,6 +29,8 @@ def generate_launch_description():
                     "image_rect:=/image_raw",
                     "-r",
                     "camera_info:=/camera_info",
+                    "--params-file",
+                    "/home/koroko/ros2_ws/src/apriltag_ros/cfg/tags_36h11.yaml",
                 ],
             ),
             Node(
