@@ -114,6 +114,7 @@ class SerialAdapterNode(Node):
                 data = self.read_port.readline().decode()
             except:
                 self.get_logger().error(f"Decode fail")
+                return
         else:
             data = ""
         if len(data) > 0:
