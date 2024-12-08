@@ -107,16 +107,21 @@ class SerialAdapterNode(Node):
         """
         Decode the latest line of serial sensor data.
         """
-        # decode data or save an empty string
+        # decode data
         if self.read_port is not None:
             self.get_logger().info("Attempting a decode")
             try:
                 data = self.read_port.readline().decode()
             except:
-                self.get_logger().error(f"Decode fail")
-                return
+                # decode failure
+                data = "FAIL"
         else:
-            data = ""
+            return
+        # handle failure
+        if data == "FAIL":
+            self.get_logger().info("DECODE FAILURE")
+            return
+
         if len(data) > 0:
             # split up message and sort by letter code
             msg_arr = data.split(",")
