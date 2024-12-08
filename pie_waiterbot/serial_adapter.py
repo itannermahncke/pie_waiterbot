@@ -148,8 +148,6 @@ class SerialAdapterNode(Node):
             # color sensor
             elif msg_arr[0] == "cl":
                 self.color_publisher.publish(String(data=msg_arr[1]))
-        else:
-            self.get_logger().warn(f"Line -{data}- failed or is empty")
 
     def cfg_msg(self, code, msg) -> str:
         """

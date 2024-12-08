@@ -6,6 +6,6 @@
     stepper_code: "1"
 
     button_list: ['bb', 'bg', 'br']
-    BB: "table1"
-    BG: "table2"
-    BR: "table3"
+    bb: "table1"
+    bg: "table2"
+    br: "table3"
