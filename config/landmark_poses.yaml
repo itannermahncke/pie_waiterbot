@@ -1,6 +1,6 @@
 /**:
   ros__parameters:
-    apriltag_ids: ['test1']
+    apriltag_ids: ['tag36h11:1']
     destination_ids: ['kitchen', 'table1', 'table2', 'table3']
 
     test1_translation: [5.0, 5.0, 0.0]

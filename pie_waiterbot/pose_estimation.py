@@ -34,7 +34,7 @@ class PoseEstimationNode(Node):
 
         # subscribers
         self.d_sub = self.create_subscription(
-            AprilTagDetectionArray, "apriltag/detections", self.detection_callback, 10
+            AprilTagDetectionArray, "detections", self.detection_callback, 10
         )
 
         # pose publisher
@@ -45,21 +45,20 @@ class PoseEstimationNode(Node):
         Callback when an array of AprilTag detections is received. Return
         robot pose within world frame and publish.
         """
-        detection: AprilTagDetection
-        for detection in detections:
-            if detection.id in self.apriltag_list:
+        for detection in detections.detections:
+            if "test1" in self.apriltag_list:
                 # find initial relationships
                 apriltag_wrt_world = self.tf_buffer.lookup_transform(
-                    detection.id, "world", Time()
+                    "test1", "world", Time()
                 )
-                apriltag_wrt_camera = self.tf_buffer.lookup_transform(
-                    detection.id, "camera", Time()
-                )
+                # apriltag_wrt_camera = self.tf_buffer.lookup_transform(
+                #    "camera", "test1", detections.header.stamp
+                # )
                 # find camera_wrt_apriltag
-                transform = tf.concatenate_matrices(
-                    tf.translation_matrix(apriltag_wrt_camera),
-                    tf.quaternion_matrix(rot),
-                )
+                # transform = tf.concatenate_matrices(
+                #    tf.translation_matrix(apriltag_wrt_camera),
+                #    tf.quaternion_matrix(rot),
+                # )
                 # inversed_transform = t.inverse_matrix(transform)
                 # find camera_wrt_world
                 # publish updated pose estimate

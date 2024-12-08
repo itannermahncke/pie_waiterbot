@@ -148,10 +148,14 @@ class MapMakerNode(Node):
         tf: TransformStamped
         for tf in tfmessage.transforms:
             # if an apriltag_wrt_image tf, update apriltag_wrt_camera tf
-            if tf.child_frame_id in self.apriltag_list and tf.header != "camera":
+            if (
+                tf.child_frame_id in self.apriltag_list
+                and tf.header.frame_id != "camera"
+            ):
                 apriltag_wrt_camera = tf
-                apriltag_wrt_camera.header = "camera"
+                apriltag_wrt_camera.header.frame_id = "camera"
                 self.tf_dynamic_broadcaster.sendTransform(apriltag_wrt_camera)
+                print("HELLO")
             else:
                 print(
                     f"tag {tf.child_frame_id} not found in AprilTag list. ignoring tf"

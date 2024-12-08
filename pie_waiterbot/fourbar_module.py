@@ -20,6 +20,7 @@ class FourbarModuleNode(Node):
         # 1: extending module
         # 2: retracting module
         # 3: just finished
+        self.previous_status = 0
         self.task_status = 0
         # TRAY or DRINKS
         self.task_mode = "TRAY"
@@ -70,7 +71,7 @@ class FourbarModuleNode(Node):
         """
         if self.task_status == 1:
             if not strain.data:
-                self.task_status = 2
+                self.change_status(3)
 
     def goal_callback(self, boolean: Bool):
         """
@@ -83,14 +84,14 @@ class FourbarModuleNode(Node):
         """
         if boolean.data:
             if self.task_status in (0, 3):
-                self.task_status = 1
+                self.change_status(3)
 
     def location_callback(self, goal_id: String):
         """
         If the robot has a new goal, reset the four bar and save the new goal.
         """
         if not goal_id.data == self.destination:
-            self.task_status = 0
+            self.change_status(3)
         self.destination = goal_id.data
 
     def timer_callback(self):
@@ -100,8 +101,14 @@ class FourbarModuleNode(Node):
         if self.task_status == 2:
             self.time = self.time + self.publisher_tick_rate
             if self.time > 5:  # wait for 5 seconds before changing status to 0
-                self.task_status = 3
+                self.change_status(3)
                 self.time = 0
+
+    def change_status(self, status):
+        """
+        Change task_status and publish it to topics
+        """
+        self.task_status = status
 
         angle = String()
         status = String()
