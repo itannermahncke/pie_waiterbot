@@ -109,7 +109,11 @@ class SerialAdapterNode(Node):
         """
         # decode data or save an empty string
         if self.read_port is not None:
-            data = self.read_port.readline().decode()
+            self.get_logger().info("Attempting a decode")
+            try:
+                data = self.read_port.readline().decode()
+            except:
+                self.get_logger().error(f"Decode fail on line {data}")
         else:
             data = ""
         if len(data) > 0:
