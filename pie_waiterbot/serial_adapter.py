@@ -125,7 +125,9 @@ class SerialAdapterNode(Node):
 
             # first, handle buttons
             if msg_code in self.button_dest_table.keys():
-                self.goal_request_publisher.publish(self.button_dest_table[msg_code])
+                self.goal_request_publisher.publish(
+                    String(data=self.button_dest_table[msg_code])
+                )
             # encoder data
             elif msg_code == "en":
                 self.drivetrain_publisher.publish(
