@@ -90,11 +90,8 @@ class SerialAdapterNode(Node):
         microcontroller.
         """
         serial_line = self.cfg_msg(self.dt_code, f"{twist.linear.x},{twist.angular.z}")
-        self.get_logger().info(f"SERIAL PUBLISH: {serial_line}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
-        else:
-            self.get_logger().info(f"Catching serial message: {serial_line}")
 
     def fourbar_callback(self, string: String):
         """
@@ -103,50 +100,56 @@ class SerialAdapterNode(Node):
         at. Transmit it onto the serial port of the microcontroller.
         """
         serial_line = self.cfg_msg(self.st_code, string.data)
-        self.get_logger().info(f"SERIAL PUBLISH: {serial_line}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
-        else:
-            self.get_logger().info(f"Catching serial message: {serial_line}")
 
     def read_callback(self):
         """
         Decode the latest line of serial sensor data.
         """
-        # decode data or save an empty string
+        # decode data
         if self.read_port is not None:
-            data = self.read_port.readline().decode()
+            try:
+                line_data = self.read_port.readline().decode()
+            except:
+                return
         else:
-            data = ""
-        if len(data) > 0:
+            return
+
+        # at this point, data should be present
+        if len(line_data) > 0 and line_data != "FAIL":
+            self.get_logger().info(f"parsing decoded serial line: {line_data}")
             # split up message and sort by letter code
-            msg_arr = data.split(",")
+            msg_code = line_data[0:2]
+            msg_data = line_data[2:].split(",")
 
             # first, handle buttons
-            if msg_arr[0] in self.button_dest_table.keys():
-                self.goal_request_publisher.publish(self.button_dest_table[msg_arr[0]])
+            if msg_code in self.button_dest_table.keys():
+                self.goal_request_publisher.publish(
+                    String(data=self.button_dest_table[msg_code])
+                )
             # encoder data
-            elif msg_arr[0] == "EN":
+            elif msg_code == "en":
                 self.drivetrain_publisher.publish(
-                    Float32MultiArray(data=[float(msg_arr[1]), float(msg_arr[2])])
+                    Float32MultiArray(data=[float(msg_data[0]), float(msg_data[1])])
                 )
             # IMU data
-            elif msg_arr[0] == "MU":
+            elif msg_code == "mu":
                 self.imu_publisher.publish(
-                    Float32MultiArray(data=[float(msg_arr[1]), float(msg_arr[2])])
+                    Float32MultiArray(data=[float(msg_data[0]), float(msg_data[1])])
                 )
             # strain gauge
-            elif msg_arr[0] == "SG":
-                if msg_arr[1] == "0":
+            elif msg_code == "sg":
+                if msg_data[0] == "0":
                     boolean = False
-                if msg_arr[1] == "1":
+                if msg_data[0] == "1":
                     boolean = True
                 else:
                     return
                 self.strain_publisher.publish(Bool(data=boolean))
             # color sensor
-            elif msg_arr[0] == "CL":
-                self.color_publisher.publish(String(data=msg_arr[1]))
+            elif msg_code == "cl":
+                self.color_publisher.publish(String(data=msg_data[0]))
 
     def cfg_msg(self, code, msg) -> str:
         """

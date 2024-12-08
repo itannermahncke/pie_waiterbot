@@ -1,5 +1,5 @@
 """
-Launch dead-reckoning-based navigation including the module node.
+Launch complete robot system.
 """
 
 from launch_ros.actions import Node
@@ -10,6 +10,7 @@ import os
 
 
 def generate_launch_description():
+    # config
     landmark_poses = os.path.join(
         get_package_share_directory("pie_waiterbot"), "landmark_poses.yaml"
     )
@@ -22,8 +23,24 @@ def generate_launch_description():
         get_package_share_directory("pie_waiterbot"), "serial.yaml"
     )
 
+    # external nodes
+    apriltag_detection = (
+        Node(
+            package="apriltag_ros",
+            executable="apriltag_node",
+            arguments=[
+                "-r",
+                "image_rect:=/image_raw",
+                "-r",
+                "camera_info:=/camera_info",
+            ],
+        ),
+    )
+    ## RPI CAMERA NODE?
+
     return LaunchDescription(
         [
+            apriltag_detection,
             Node(
                 package="pie_waiterbot",
                 executable="map_maker",

@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String, Bool
+from std_msgs.msg import String, Bool, Int16
 
 
 class FourbarModuleNode(Node):
@@ -20,10 +20,21 @@ class FourbarModuleNode(Node):
         # 1: extending module
         # 2: retracting module
         # 3: just finished
-        self.task_status = 0
+        self.declare_parameter("module_status", rclpy.Parameter.Type.INTEGER)
+        self.task_status = (
+            self.get_parameter("module_status").get_parameter_value().integer_value
+        )
+
         # TRAY or DRINKS
         self.task_mode = "TRAY"
-        self.destination = None
+
+        # initial goal
+        self.declare_parameter("goal_id", rclpy.Parameter.Type.STRING)
+        self.destination = (
+            self.get_parameter("goal_id").get_parameter_value().string_value
+        )
+        if self.destination == "None":
+            self.destination = None
 
         # subscribe to sensor topics
         self.color_subscriber = self.create_subscription(
@@ -38,13 +49,13 @@ class FourbarModuleNode(Node):
             Bool, "goal_status", self.goal_callback, 10
         )
         self.location_subscriber = self.create_subscription(
-            String, "goal_id", self.location_callback, 10
+            String, "latest_goal", self.location_callback, 10
         )
 
         # publishing four bar status
         self.angle_publisher = self.create_publisher(String, "fourbar_module_angle", 10)
         self.status_publisher = self.create_publisher(
-            String, "fourbar_module_status", 10
+            Int16, "fourbar_module_status", 10
         )
         self.publisher_tick_rate = 0.1
         self.publish_timer = self.create_timer(
@@ -69,8 +80,8 @@ class FourbarModuleNode(Node):
         will retract.
         """
         if self.task_status == 1:
-            if not strain.data:
-                self.change_status(3)
+            if strain.data:
+                self.change_status(2)
 
     def goal_callback(self, boolean: Bool):
         """
@@ -83,14 +94,14 @@ class FourbarModuleNode(Node):
         """
         if boolean.data:
             if self.task_status in (0, 3):
-                self.change_status(3)
+                self.change_status(1)
 
     def location_callback(self, goal_id: String):
         """
         If the robot has a new goal, reset the four bar and save the new goal.
         """
         if not goal_id.data == self.destination:
-            self.change_status(3)
+            self.change_status(0)
         self.destination = goal_id.data
 
     def timer_callback(self):
@@ -110,11 +121,11 @@ class FourbarModuleNode(Node):
         self.task_status = status
 
         angle = String()
-        status = String()
+        status = Int16()
 
         cur_angle = 0
 
-        status.data = str(self.task_status)
+        status.data = self.task_status
         if self.task_status in (0, 2, 3):
             cur_angle = 0
         if self.task_status == 1:
@@ -127,6 +138,9 @@ class FourbarModuleNode(Node):
 
         angle.data = str(cur_angle)
 
+        self.get_logger().info(
+            f"Module status update: {self.task_mode} {self.task_status} {cur_angle}"
+        )
         self.status_publisher.publish(status)
         self.angle_publisher.publish(angle)
 

@@ -5,7 +5,7 @@ from rclpy.node import Node
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
-from std_msgs.msg import String, Bool
+from std_msgs.msg import String, Bool, Int16
 from collections import deque
 
 
@@ -27,7 +27,7 @@ class PathPlanningNode(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        # parameters
+        # map parameters
         self.declare_parameter("destination_ids", rclpy.Parameter.Type.STRING_ARRAY)
         self.destinations = (
             self.get_parameter("destination_ids")
@@ -47,16 +47,29 @@ class PathPlanningNode(Node):
             Bool, "goal_status", self.goal_status_callback, 10
         )
         self.request_sub = self.create_subscription(
-            String, "goal_request", self.goal_status_callback, 10
+            String, "goal_request", self.request_callback, 10
         )
-        self.tray_status_sub = self.create_subscription(
-            String, "fourbar_module_status", self.fourbar_status_callback, 10
+        self.module_status_sub = self.create_subscription(
+            Int16, "fourbar_module_status", self.fourbar_status_callback, 10
         )
 
-        # attributes
-        self.latest_goal_id = None
-        self.goal_status = True  # start frozen
-        self.module_status = 0  # assume fine
+        # robot initial status parameters
+        self.declare_parameter("goal_id", rclpy.Parameter.Type.STRING)
+        self.latest_goal_id = (
+            self.get_parameter("goal_id").get_parameter_value().string_value
+        )
+        if self.latest_goal_id == "None":
+            self.latest_goal_id = None
+        self.declare_parameter("goal_status", rclpy.Parameter.Type.BOOL)
+        self.goal_status = (
+            self.get_parameter("goal_status").get_parameter_value().bool_value
+        )
+        self.declare_parameter("module_status", rclpy.Parameter.Type.INTEGER)
+        self.module_status = (
+            self.get_parameter("module_status").get_parameter_value().integer_value
+        )
+
+        # request queue
         self.request_queue = deque()
 
     def latest_goal_callback(self, goal: String):
@@ -72,22 +85,7 @@ class PathPlanningNode(Node):
         # save latest goal
         self.goal_status = status_msg.data
 
-        # if true, determine next destination
-        if self.goal_status:
-            # always prioritize a return to the kitchen
-            if self.latest_goal_id != self.kitchen:
-                self.request_queue.appendleft(self.kitchen)
-            # else, grab the oldest goal request
-            current_goal = self.request_queue.popleft()
-
-            # wait for the robot to be in an acceptable state to start a new goal
-            while self.module_status in (1, 2) or not self.goal_status:
-                self.get_logger().info("Must complete current task first")
-
-            # publish new goal
-            self.goal_id_publisher.publish(current_goal)
-
-    def fourbar_status_callback(self, status_msg: String):
+    def fourbar_status_callback(self, status_msg: Int16):
         """
         0: not started
         1: extend the module
@@ -95,16 +93,45 @@ class PathPlanningNode(Node):
         3: Just finished
         """
         self.module_status = status_msg.data
+        self.get_logger().info(f"Heard latest module update: {self.module_status}")
+
+        if self.module_status == 3:
+            # attempt to determine the next goal
+            self.determine_next_goal()
 
     def request_callback(self, request: String):
         """
         Handles a goal change request from a button.
         """
+        self.get_logger().info(f"Heard request: {request.data}")
         # only handle verified destinations
         if request.data in self.destinations:
+            self.get_logger().info(f"Added {request.data} to destinations!")
             self.request_queue.append(request.data)
+            self.determine_next_goal()
         else:
             self.get_logger().info(f"Request {request.data} not in destinations!")
+
+    def determine_next_goal(self):
+        """
+        Determines whether or not to publish the next goal in the queue.
+        """
+        # only move forward if the current goal is complete and the module is stationary
+        if self.goal_status and self.module_status == 3:
+            # any table must return to the kitchen first
+            if self.latest_goal_id != self.kitchen and self.latest_goal_id is not None:
+                self.request_queue.appendleft(self.kitchen)
+
+            # only move forward if there is a next available goal, otherwise do nothing
+            if len(self.request_queue) > 0:
+                # pop the next goal
+                current_goal = String(data=self.request_queue.popleft())
+
+                # publish new goal
+                self.get_logger().info(f"Announcing new task {current_goal.data}")
+                self.goal_id_publisher.publish(current_goal)
+            else:
+                self.get_logger().info(f"No goals: {self.request_queue}")
 
 
 def main(args=None):

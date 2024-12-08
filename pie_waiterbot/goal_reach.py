@@ -31,16 +31,28 @@ class ReachGoalNode(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        # parameters
+        # map parameters
         self.declare_parameter("destination_ids", rclpy.Parameter.Type.STRING_ARRAY)
         self.destinations = (
             self.get_parameter("destination_ids")
             .get_parameter_value()
             .string_array_value
         )
+
+        # robot parameters
         self.declare_parameter("initial_pose", rclpy.Parameter.Type.DOUBLE_ARRAY)
         self.latest_coords = (
             self.get_parameter("initial_pose").get_parameter_value().double_array_value
+        )
+        self.declare_parameter("goal_id", rclpy.Parameter.Type.STRING)
+        self.latest_goal_id = (
+            self.get_parameter("goal_id").get_parameter_value().string_value
+        )
+        if self.latest_goal_id == "None":
+            self.latest_goal_id = None
+        self.declare_parameter("goal_status", rclpy.Parameter.Type.BOOL)
+        self.goal_status = (
+            self.get_parameter("goal_status").get_parameter_value().bool_value
         )
 
         # goal management
@@ -48,6 +60,10 @@ class ReachGoalNode(Node):
             String, "latest_goal", self.goal_update_callback, 10
         )
         self.goal_status_pub = self.create_publisher(Bool, "goal_status", 10)
+
+        self.goal_status_sub = self.create_subscription(
+            Bool, "goal_status", self.latest_status_callback, 10
+        )
 
         # drive management
         self.pose_subscriber = self.create_subscription(
@@ -58,10 +74,6 @@ class ReachGoalNode(Node):
         self.estop_subscriber = self.create_subscription(
             Bool, "e_stop", self.estop_callback, 10
         )
-
-        # goal attributes
-        self.latest_goal_id = None
-        self.goal_status = True  # start frozen
 
         # control
         self.ang_K = 0.5
@@ -81,20 +93,21 @@ class ReachGoalNode(Node):
 
         # resets goals
         self.latest_goal_id = None
-        self.goal_stats = True
+        self.goal_status = True
+
+    def latest_status_callback(self, goal: Bool):
+        """
+        Update local latest goal status.
+        """
+        self.goal_status = goal.data
 
     def goal_update_callback(self, goal_id: String):
         """
         Callback function when a button press indicates that the robot has a
-        new goal AprilTag to navigate towards.
+        new goal to navigate towards.
         """
-        if goal_id.data in self.destinations:
-            self.latest_goal_id = goal_id.data
-            self.goal_status_pub.publish(Bool(data=False))
-        else:
-            self.get_logger().info(
-                f"ERROR: ID {goal_id.data} NOT FOUND IN KNOWN ID LIST."
-            )
+        self.latest_goal_id = goal_id.data
+        self.goal_status_pub.publish(Bool(data=False))
 
     def pose_update_callback(self, pose: Pose):
         """
@@ -130,14 +143,12 @@ class ReachGoalNode(Node):
                 self.goal_status_pub.publish(Bool(data=True))
 
             # publish
-            self.get_logger().info(
-                f"publishing lin: {twist.linear.x} ang {twist.angular.z}"
-            )
             self.speeds_publisher.publish(twist)
 
     def calculate_error(self):
         """
-        Calculate error between current heading and ideal heading to approach AprilTag.
+        Calculate error between current heading and ideal heading to approach
+        destination.
         """
         goal_xy = self.tf_buffer.lookup_transform(
             "world", self.latest_goal_id, Time()
@@ -147,7 +158,6 @@ class ReachGoalNode(Node):
         lin_error = math.sqrt(delta_x**2 + delta_y**2)
         ang_error = math.atan2(delta_y, delta_x) - self.latest_coords[2]
 
-        self.get_logger().info(f"lin_error: {lin_error} | ang_error: {ang_error}")
         return lin_error, ang_error
 
 

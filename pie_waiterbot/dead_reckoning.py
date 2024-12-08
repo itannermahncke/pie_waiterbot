@@ -54,9 +54,6 @@ class DeadReckoningNode(Node):
             # assume constant velocity for transformation
             angle_change = self.latest_twist.angular.z * self.timestep
             linear_change = self.latest_twist.linear.x * self.timestep
-            self.get_logger().info(
-                f"Lin change: {linear_change} | ang change: {angle_change}"
-            )
 
             # apply change in angle first
             orient = current_pose.orientation
@@ -72,14 +69,6 @@ class DeadReckoningNode(Node):
             angle = (
                 euler_angles[2] + angle_change
             )  # difference between current heading and angle change
-            self.get_logger().info(f"{angle}")
-            self.get_logger().info(
-                f"{linear_change} * {round(math.cos(angle), 3)} + {current_pose.position.x}"
-            )
-
-            self.get_logger().info(
-                f"{linear_change} * {round(math.sin(angle), 3)} + {current_pose.position.y}"
-            )
             new_pose.position.x = (
                 linear_change * round(math.cos(angle), 3) + current_pose.position.x
             )
@@ -88,9 +77,7 @@ class DeadReckoningNode(Node):
             )
 
             # update pose
-            self.get_logger().info(f"Old pose: {current_pose} | New pose: {new_pose}")
             self.latest_pose = new_pose
-            self.get_logger().info(f"New pose: {new_pose}")
 
         # broadcast current pose
         self.pose_pub.publish(self.latest_pose)
@@ -100,7 +87,6 @@ class DeadReckoningNode(Node):
         Save the latest Twist command.
         """
         self.latest_twist = msg
-        self.get_logger().info(f"Latest twist: {self.latest_twist}")
 
     def make_quaternion_msg(self, quat: list[float]):
         """

@@ -11,10 +11,6 @@ import os
 
 
 def generate_launch_description():
-    apriltag_poses = os.path.join(
-        get_package_share_directory("pie_waiterbot"), "apriltag_poses.yaml"
-    )
-
     landmark_poses = os.path.join(
         get_package_share_directory("pie_waiterbot"), "landmark_poses.yaml"
     )
@@ -35,12 +31,12 @@ def generate_launch_description():
             ),
             Node(
                 package="pie_waiterbot",
-                executable="map_maker",
+                executable="pose_estimation",
                 parameters=[landmark_poses],
             ),
             Node(
                 package="pie_waiterbot",
-                executable="pose_estimation",
+                executable="map_maker",
                 parameters=[landmark_poses],
             ),
         ]
