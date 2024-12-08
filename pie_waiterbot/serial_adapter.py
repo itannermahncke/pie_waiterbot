@@ -109,7 +109,6 @@ class SerialAdapterNode(Node):
         """
         # decode data
         if self.read_port is not None:
-            self.get_logger().info("Attempting a decode")
             try:
                 data = self.read_port.readline().decode()
             except:
@@ -117,12 +116,10 @@ class SerialAdapterNode(Node):
                 data = "FAIL"
         else:
             return
-        # handle failure
-        if data == "FAIL":
-            self.get_logger().info("DECODE FAILURE")
-            return
+
+        # at this point, data should be present
         self.get_logger().info(f"parsing decoded serial line: {data}")
-        if len(data) > 0:
+        if len(data) > 0 and data != "FAIL":
             # split up message and sort by letter code
             msg_arr = data.split(",")
 
@@ -151,6 +148,8 @@ class SerialAdapterNode(Node):
             # color sensor
             elif msg_arr[0] == "CL":
                 self.color_publisher.publish(String(data=msg_arr[1]))
+        else:
+            self.get_logger().warn(f"Line -{data}- failed or is empty")
 
     def cfg_msg(self, code, msg) -> str:
         """
