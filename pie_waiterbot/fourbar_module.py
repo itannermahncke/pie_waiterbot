@@ -74,8 +74,7 @@ class FourbarModuleNode(Node):
 
     def goal_callback(self, boolean: Bool):
         """
-        Takes a boolean from the goal_status topic and sets the state of the
-        module's task.
+        When a goal has been completed, start extending the four-bar.
 
         0: not started
         1: extend the module
@@ -121,7 +120,6 @@ class FourbarModuleNode(Node):
                 cur_angle = 0
 
         angle.data = str(cur_angle)
-        self.get_logger().info(f"angle: {cur_angle}, status: {self.task_status}")
 
         self.status_publisher.publish(status)
         self.angle_publisher.publish(angle)
