@@ -90,11 +90,8 @@ class SerialAdapterNode(Node):
         microcontroller.
         """
         serial_line = self.cfg_msg(self.dt_code, f"{twist.linear.x},{twist.angular.z}")
-        self.get_logger().info(f"SERIAL PUBLISH: {serial_line}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
-        else:
-            self.get_logger().info(f"Catching serial message: {serial_line}")
 
     def fourbar_callback(self, string: String):
         """
@@ -103,11 +100,8 @@ class SerialAdapterNode(Node):
         at. Transmit it onto the serial port of the microcontroller.
         """
         serial_line = self.cfg_msg(self.st_code, string.data)
-        self.get_logger().info(f"SERIAL PUBLISH: {serial_line}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
-        else:
-            self.get_logger().info(f"Catching serial message: {serial_line}")
 
     def read_callback(self):
         """
