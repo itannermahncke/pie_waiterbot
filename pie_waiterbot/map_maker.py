@@ -43,6 +43,15 @@ class MapMakerNode(Node):
         )
         self.make_apriltag_transformations()
 
+        # destination placement
+        self.declare_parameter("destination_ids", rclpy.Parameter.Type.STRING_ARRAY)
+        self.dest_list = (
+            self.get_parameter("destination_ids")
+            .get_parameter_value()
+            .string_array_value
+        )
+        self.make_dest_transformations()
+
     def make_apriltag_transformations(self):
         """
         Define all of the static transformations between each AprilTag and the
@@ -77,6 +86,29 @@ class MapMakerNode(Node):
 
             # broadcast
             self.tf_static_broadcaster.sendTransform(apriltag_wrt_world)
+
+    def make_dest_transformations(self):
+        """
+        Define all of the static transformations between each destination and
+        the world coordinate frame.
+        """
+        for dest in self.dest_list:
+            self.get_logger().info(f"MAKING STATIC TRANSFORM FOR {dest}")
+            # declare parameters
+            self.declare_parameter(f"{dest}_coords", rclpy.Parameter.Type.DOUBLE_ARRAY)
+
+            # get translation and rotation
+            coords = (
+                self.get_parameter(f"{dest}_coords")
+                .get_parameter_value()
+                .double_array_value
+            )
+
+            # convert to transform
+            dest_wrt_world = self.make_static_transform(dest, coords, [0.0, 0.0, 0.0])
+
+            # broadcast
+            self.tf_static_broadcaster.sendTransform(dest_wrt_world)
 
     def make_static_transform(
         self, id, translation: list[float], rotation: list[float]
