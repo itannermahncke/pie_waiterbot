@@ -58,7 +58,6 @@ class MapMakerNode(Node):
         world coordinate frame.
         """
         for apriltag_id in self.apriltag_list:
-            self.get_logger().info(f"MAKING STATIC TRANSFORM FOR {apriltag_id}")
             # declare parameters
             self.declare_parameter(
                 f"{apriltag_id}_translation", rclpy.Parameter.Type.DOUBLE_ARRAY
@@ -87,13 +86,14 @@ class MapMakerNode(Node):
             # broadcast
             self.tf_static_broadcaster.sendTransform(apriltag_wrt_world)
 
+            self.get_logger().info(f"PUBLISHED STATIC TRANSFORM FOR {apriltag_id}")
+
     def make_dest_transformations(self):
         """
         Define all of the static transformations between each destination and
         the world coordinate frame.
         """
         for dest in self.dest_list:
-            self.get_logger().info(f"MAKING STATIC TRANSFORM FOR {dest}")
             # declare parameters
             self.declare_parameter(f"{dest}_coords", rclpy.Parameter.Type.DOUBLE_ARRAY)
 
@@ -109,6 +109,8 @@ class MapMakerNode(Node):
 
             # broadcast
             self.tf_static_broadcaster.sendTransform(dest_wrt_world)
+
+            self.get_logger().info(f"PUBLISHED STATIC TRANSFORM FOR {dest}")
 
     def make_static_transform(
         self, id, translation: list[float], rotation: list[float]
