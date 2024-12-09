@@ -78,8 +78,8 @@ class ReachGoalNode(Node):
         # control
         self.ang_K = 0.5
         self.lin_K = 0.8
-        self.max_ang_vel = 0.9436
-        self.max_lin_vel = 0.2720
+        self.max_ang_vel = 0.5
+        self.max_lin_vel = 0.15
         self.tolerance = 0.05
 
     def estop_callback(self, _: Empty):
