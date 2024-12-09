@@ -82,6 +82,9 @@ class ReachGoalNode(Node):
         self.max_lin_vel = 0.15
         self.tolerance = 0.05
 
+        # latest Twist
+        self.latest_twist = Twist()
+
     def estop_callback(self, _: Empty):
         """
         Immediately stops the motors and prevents further motor commands. Node
@@ -148,8 +151,13 @@ class ReachGoalNode(Node):
             else:
                 self.goal_status_pub.publish(Bool(data=True))
 
-            # publish
-            self.speeds_publisher.publish(twist)
+            # publish OR skip if identical to latest
+            if not (
+                twist.linear.x == self.latest_twist.linear.x
+                and twist.angular.z == self.latest_twist.angular.z
+            ):
+                self.speeds_publisher.publish(twist)
+                self.latest_twist = twist
 
     def calculate_error(self):
         """
