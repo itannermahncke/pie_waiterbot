@@ -136,8 +136,13 @@ class ReachGoalNode(Node):
 
             # if error is significant, correct
             if lin_error > self.tolerance or ang_error > self.tolerance:
-                twist.linear.x = self.max_lin_vel
-                twist.angular.z = min(ang_error * self.ang_K, self.max_ang_vel)
+                # make sure not to go over the max value
+                twist.linear.x = self.directionless_min(
+                    lin_error * self.lin_K, self.max_lin_vel
+                )
+                twist.angular.z = self.directionless_min(
+                    ang_error * self.ang_K, self.max_ang_vel
+                )
             # if within tolerance, stop and change goal state
             else:
                 self.goal_status_pub.publish(Bool(data=True))
@@ -153,12 +158,24 @@ class ReachGoalNode(Node):
         goal_xy = self.tf_buffer.lookup_transform(
             "world", self.latest_goal_id, Time()
         ).transform.translation
+
         delta_x = goal_xy.x - self.latest_coords[0]
         delta_y = goal_xy.y - self.latest_coords[1]
         lin_error = math.sqrt(delta_x**2 + delta_y**2)
         ang_error = math.atan2(delta_y, delta_x) - self.latest_coords[2]
 
         return lin_error, ang_error
+
+    def directionless_min(self, velocity, max_vel):
+        """
+        Return the minimum value between a velocity and its maximum without
+        throwing up when the velocity is negative.
+        """
+        # we want to grab the number that is closest to 0.0
+        if velocity >= 0:
+            return min(velocity, max_vel)
+        if velocity < 0:
+            return max(velocity, max_vel)
 
 
 def main(args=None):
