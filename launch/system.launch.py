@@ -24,23 +24,22 @@ def generate_launch_description():
     )
 
     # external nodes
-    apriltag_detection = (
-        Node(
-            package="apriltag_ros",
-            executable="apriltag_node",
-            arguments=[
-                "-r",
-                "image_rect:=/image_raw",
-                "-r",
-                "camera_info:=/camera_info",
-            ],
-        ),
+    apriltag_detection = Node(
+        package="apriltag_ros",
+        executable="apriltag_node",
+        arguments=[
+            "--remap",
+            "image_rect:=/image_raw",
+            "--remap",
+            "camera_info:=/camera_info",
+        ],
     )
-    ## RPI CAMERA NODE?
+    rpicam_node = Node(package="v4l2_camera", executable="v4l2_camera_node")
 
     return LaunchDescription(
         [
             apriltag_detection,
+            rpicam_node,
             Node(
                 package="pie_waiterbot",
                 executable="map_maker",
