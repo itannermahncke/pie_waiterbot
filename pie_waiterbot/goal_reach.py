@@ -72,7 +72,7 @@ class ReachGoalNode(Node):
         self.speed_interval = self.create_timer(0.1, self.control_loop)
         self.speeds_publisher = self.create_publisher(Twist, "cmd_vel", 10)
         self.estop_subscriber = self.create_subscription(
-            Bool, "e_stop", self.estop_callback, 10
+            Empty, "e_stop", self.estop_callback, 10
         )
 
         # control
