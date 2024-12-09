@@ -173,9 +173,13 @@ class ReachGoalNode(Node):
         """
         # we want to grab the number that is closest to 0.0
         if velocity >= 0:
-            return min(velocity, max_vel)
+            v = min(velocity, max_vel)
+            self.get_logger().info(f"Min btwn {velocity} and {max_vel} is {v}")
         if velocity < 0:
-            return max(velocity, max_vel)
+            v = max(velocity, max_vel)
+            self.get_logger().info(f"Max btwn {velocity} and {max_vel} is {v}")
+
+        return v
 
 
 def main(args=None):
