@@ -47,7 +47,7 @@ def generate_launch_description():
             Node(
                 package="pie_waiterbot",
                 executable="path_planning",
-                parameters=[landmark_poses],
+                parameters=[landmark_poses, robot_info],
             ),
         ]
     )

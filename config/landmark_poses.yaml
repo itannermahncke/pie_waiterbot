@@ -8,6 +8,6 @@
     tag1_rotation: [0.0, 0.0, 0.0]
     
     kitchen_coords: [0.0, 0.0, 0.0]
-    table1_coords: [2.0, 3.0, 0.0]
-    table2_coords: [0.0, -2.0, 0.0]
-    table3_coords: [4.0, 1.0, 0.0]
+    table1_coords: [1.0, 0.0, 0.0]
+    table2_coords: [0.5, 0.0, 0.0]
+    table3_coords: [0.0, 0.0, 0.0]
