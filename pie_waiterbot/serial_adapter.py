@@ -17,10 +17,12 @@ class SerialAdapterNode(Node):
         """
         Initialize an instance of the SerialAdapterNode class.
         """
+        self.get_logger().info("INIT")
         super().__init__("serial_adapter", allow_undeclared_parameters=True)
         baudRate = 9600
 
         # retrieve outgoing codes
+        self.get_logger().info("RETRIEVING PARAMS")
         self.declare_parameter("drivetrain_code", rclpy.Parameter.Type.STRING)
         self.dt_code = (
             self.get_parameter("drivetrain_code").get_parameter_value().string_value
@@ -42,6 +44,7 @@ class SerialAdapterNode(Node):
             )
 
         # subscriptions to outgoing data
+        self.get_logger().info("SUBS")
         self.speeds_subscriber = self.create_subscription(
             Twist, "cmd_vel", self.drivetrain_callback, 10
         )
@@ -50,6 +53,7 @@ class SerialAdapterNode(Node):
         )
 
         # publishers for incoming data
+        self.get_logger().info("PUBS")
         self.goal_request_publisher = self.create_publisher(String, "goal_request", 10)
         self.drivetrain_publisher = self.create_publisher(
             Float32MultiArray, "drivetrain_encoder", 10
@@ -83,6 +87,8 @@ class SerialAdapterNode(Node):
             self.read_port = None
             self.get_logger().info("Read serial failed to connect")
 
+        self.get_logger().info("INIT COMPLETE.")
+
     def drivetrain_callback(self, twist: Twist):
         """
         Callback function when a Twist message for commanding the drivetrain
@@ -107,14 +113,10 @@ class SerialAdapterNode(Node):
         """
         Decode the latest line of serial sensor data.
         """
+        self.get_logger().info("CALLING READ_CALLBACK")
         # decode data
         if self.read_port is not None:
-            try:
-                line_data = self.read_port.readline().decode()
-            except:
-                return
-        else:
-            return
+            line_data = self.read_port.readline().decode()
 
         # at this point, data should be present
         if len(line_data) > 0 and line_data != "FAIL":
