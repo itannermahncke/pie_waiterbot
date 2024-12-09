@@ -84,7 +84,8 @@ class PathPlanningNode(Node):
         """
         # save latest goal
         self.goal_status = status_msg.data
-        self.get_logger().info(f"Goal status: {self.goal_status}")
+        if self.goal_status == True:
+            self.get_logger().info(f"Completed the latest goal: {self.latest_goal_id}")
 
     def fourbar_status_callback(self, status_msg: Int16):
         """
