@@ -134,14 +134,15 @@ class ReachGoalNode(Node):
             # calculate error
             lin_error, ang_error = self.calculate_error()
 
-            # if error is significant, correct
-            if lin_error > self.tolerance or ang_error > self.tolerance:
-                # make sure not to go over the max value
-                twist.linear.x = self.directionless_min(
-                    lin_error * self.lin_K, self.max_lin_vel
-                )
+            # if angle error is significant, correct
+            if ang_error > self.tolerance:
                 twist.angular.z = self.directionless_min(
                     ang_error * self.ang_K, self.max_ang_vel
+                )
+            # if lin error is significant, correct
+            elif lin_error > self.tolerance:
+                twist.linear.x = self.directionless_min(
+                    lin_error * self.lin_K, self.max_lin_vel
                 )
             # if within tolerance, stop and change goal state
             else:
@@ -176,7 +177,7 @@ class ReachGoalNode(Node):
             v = min(velocity, max_vel)
             self.get_logger().info(f"Min btwn {velocity} and {max_vel} is {v}")
         if velocity < 0:
-            v = max(velocity, max_vel)
+            v = max(velocity, -1 * max_vel)
             self.get_logger().info(f"Max btwn {velocity} and {max_vel} is {v}")
 
         return v
