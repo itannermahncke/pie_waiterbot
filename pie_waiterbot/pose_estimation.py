@@ -49,7 +49,7 @@ class PoseEstimationNode(Node):
         """
         for detection in detections.detections:
             tag_name = "tag36h11:" + str(detection.id)
-            if tag_name in ("tag36h11:1"):
+            if detection.id in (1,5):
                 # find initial relationships
                 apriltag_wrt_world = self.tf_buffer.lookup_transform(
                     f"tag{detection.id}", "world", Time()
@@ -74,14 +74,14 @@ class PoseEstimationNode(Node):
                         vector = np.array(
                             [
                                 apriltag_wrt_camera.transform.translation.x,
-                                apriltag_wrt_camera.transform.translation.y,
+                                -apriltag_wrt_camera.transform.translation.y,
                                 0,
                             ]
                         )
                         quaternion = np.array(
                             [
-                                0,
-                                0,
+                                apriltag_wrt_camera.transform.rotation.x,
+                                apriltag_wrt_camera.transform.rotation.y,
                                 apriltag_wrt_camera.transform.rotation.z,
                                 apriltag_wrt_camera.transform.rotation.w,
                             ]
