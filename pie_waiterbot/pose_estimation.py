@@ -10,6 +10,7 @@ from tf2_ros.transform_listener import TransformListener
 import tf_transformations as tf
 from tf2_msgs.msg import TFMessage
 import numpy as np
+import time
 
 
 class PoseEstimationNode(Node):
@@ -42,6 +43,20 @@ class PoseEstimationNode(Node):
         # pose publisher
         self.pose_publisher = self.create_publisher(Pose, "pose_estimate", 10)
 
+        self.confirm_tf()
+
+    def confirm_tf(self):
+        """
+        Confirm that landmarks are present in the tf tree.
+        """
+        if self.tf_buffer.can_transform(
+            "world", self.destinations[0], Time(nanoseconds=0)
+        ):
+            self.get_logger().info("Transform quality confirmed, moving ahead")
+        else:
+            self.get_logger().info("No good tf yet. Waiting 1 sec")
+            time.sleep(1.0)
+
     def detection_callback(self, detections):
         """
         Callback when an array of AprilTag detections is received. Return
@@ -49,7 +64,7 @@ class PoseEstimationNode(Node):
         """
         for detection in detections.detections:
             tag_name = "tag36h11:" + str(detection.id)
-            if detection.id in (1,5):
+            if detection.id in (1, 5):
                 # find initial relationships
                 apriltag_wrt_world = self.tf_buffer.lookup_transform(
                     f"tag{detection.id}", "world", Time()
