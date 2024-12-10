@@ -107,6 +107,7 @@ class SerialAdapterNode(Node):
         serial_line = self.cfg_msg(self.st_code, string.data)
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
+            self.get_logger().info(f"SENT FOURBAR ANGLE: {serial_line}")
 
     def read_callback(self):
         """
