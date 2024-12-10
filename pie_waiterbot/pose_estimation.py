@@ -43,21 +43,6 @@ class PoseEstimationNode(Node):
         # pose publisher
         self.pose_publisher = self.create_publisher(Pose, "pose_estimate", 10)
 
-        self.confirm_tf()
-
-    def confirm_tf(self):
-        """
-        Confirm that landmarks are present in the tf tree.
-        """
-        if self.tf_buffer.can_transform(
-            "world", self.apriltag_list[0], Time(nanoseconds=0)
-        ):
-            self.get_logger().info("Transform quality confirmed, moving ahead")
-        else:
-            self.get_logger().info("No good tf yet. Waiting 1 sec")
-            time.sleep(1.0)
-            self.confirm_tf()
-
     def detection_callback(self, detections):
         """
         Callback when an array of AprilTag detections is received. Return

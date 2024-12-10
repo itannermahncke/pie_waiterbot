@@ -52,10 +52,6 @@ class MapMakerNode(Node):
         )
         dt_tfs = self.make_dest_transformations()
 
-        self.get_logger().info(f"AT TRANSFORMS: {at_tfs}")
-
-        self.get_logger().info(f"DT TRANSFORMS: {dt_tfs}")
-
         self.tf_static_broadcaster.sendTransform(at_tfs + dt_tfs)
 
     def make_apriltag_transformations(self):
