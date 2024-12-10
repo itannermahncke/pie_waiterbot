@@ -54,6 +54,11 @@ def generate_launch_description():
             ),
             Node(
                 package="pie_waiterbot",
+                executable="pose_estimation",
+                parameters=[landmark_poses],
+            ),
+            Node(
+                package="pie_waiterbot",
                 executable="serial_adapter",
                 parameters=[serial_config],
             ),
