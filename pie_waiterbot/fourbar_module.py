@@ -15,6 +15,10 @@ class FourbarModuleNode(Node):
         """
         super().__init__("fourbar_module")
 
+        # angle standards
+        self.RESET = -1
+        self.EXTENDED = -90
+
         # state controls
         # 0: task not started
         # 1: extending module
@@ -123,18 +127,18 @@ class FourbarModuleNode(Node):
         angle = String()
         status = Int16()
 
-        cur_angle = 0
+        cur_angle = self.RESET
 
         status.data = self.task_status
         if self.task_status in (0, 2, 3):
-            cur_angle = 0
+            cur_angle = self.RESET
         if self.task_status == 1:
             if self.task_mode == "TRAY":
-                cur_angle = 30  # change this
+                cur_angle = self.EXTENDED  # change this
             elif self.task_mode == "DRINK":
-                cur_angle = 45  # change this
+                cur_angle = self.EXTENDED  # change this
             else:
-                cur_angle = 0
+                cur_angle = self.RESET
 
         angle.data = str(cur_angle)
 
