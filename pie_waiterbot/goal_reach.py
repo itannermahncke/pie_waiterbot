@@ -78,8 +78,9 @@ class ReachGoalNode(Node):
         # control
         self.ang_K = 0.5
         self.lin_K = 0.8
-        self.max_ang_vel = 0.5
-        self.max_lin_vel = 0.15
+        self.HI_LOW = [0.5, 0.9, 0.15, 0.272]
+        self.max_ang_vel = self.HI_LOW[0]
+        self.max_lin_vel = self.HI_LOW[3]
         self.tolerance = 0.05
 
         # latest Twist
