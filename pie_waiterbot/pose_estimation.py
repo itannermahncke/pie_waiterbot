@@ -50,12 +50,13 @@ class PoseEstimationNode(Node):
         Confirm that landmarks are present in the tf tree.
         """
         if self.tf_buffer.can_transform(
-            "world", self.destinations[0], Time(nanoseconds=0)
+            "world", self.apriltag_list[0], Time(nanoseconds=0)
         ):
             self.get_logger().info("Transform quality confirmed, moving ahead")
         else:
             self.get_logger().info("No good tf yet. Waiting 1 sec")
             time.sleep(1.0)
+            self.confirm_tf()
 
     def detection_callback(self, detections):
         """

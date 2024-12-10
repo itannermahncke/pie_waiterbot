@@ -100,6 +100,7 @@ class ReachGoalNode(Node):
         else:
             self.get_logger().info("No good tf yet. Waiting 1 sec")
             time.sleep(1.0)
+            self.confirm_tf()
 
     def estop_callback(self, _: Empty):
         """
