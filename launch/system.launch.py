@@ -32,6 +32,8 @@ def generate_launch_description():
             "image_rect:=/image_raw",
             "--remap",
             "camera_info:=/camera_info",
+            "--params-file",
+            "/home/waiterbot/ros2_ws/src/apriltag_ros/cfg/tags_36h11.yaml",
         ],
     )
     rpicam_node = Node(package="v4l2_camera", executable="v4l2_camera_node")
