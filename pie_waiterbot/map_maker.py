@@ -41,7 +41,7 @@ class MapMakerNode(Node):
         self.apriltag_list = (
             self.get_parameter("apriltag_ids").get_parameter_value().string_array_value
         )
-        self.make_apriltag_transformations()
+        at_tfs = self.make_apriltag_transformations()
 
         # destination placement
         self.declare_parameter("destination_ids", rclpy.Parameter.Type.STRING_ARRAY)
@@ -50,13 +50,20 @@ class MapMakerNode(Node):
             .get_parameter_value()
             .string_array_value
         )
-        self.make_dest_transformations()
+        dt_tfs = self.make_dest_transformations()
+
+        self.get_logger().info(f"AT TRANSFORMS: {at_tfs}")
+
+        self.get_logger().info(f"DT TRANSFORMS: {dt_tfs}")
+
+        self.tf_static_broadcaster.sendTransform(at_tfs + dt_tfs)
 
     def make_apriltag_transformations(self):
         """
         Define all of the static transformations between each AprilTag and the
         world coordinate frame.
         """
+        tf_list = []
         for apriltag_id in self.apriltag_list:
             # declare parameters
             self.declare_parameter(
@@ -84,15 +91,15 @@ class MapMakerNode(Node):
             )
 
             # broadcast
-            self.tf_static_broadcaster.sendTransform(apriltag_wrt_world)
-
-            self.get_logger().info(f"PUBLISHED STATIC TRANSFORM FOR {apriltag_id}")
+            tf_list.append(apriltag_wrt_world)
+        return tf_list
 
     def make_dest_transformations(self):
         """
         Define all of the static transformations between each destination and
         the world coordinate frame.
         """
+        tf_list = []
         for dest in self.dest_list:
             # declare parameters
             self.declare_parameter(f"{dest}_coords", rclpy.Parameter.Type.DOUBLE_ARRAY)
@@ -108,9 +115,8 @@ class MapMakerNode(Node):
             dest_wrt_world = self.make_static_transform(dest, coords, [0.0, 0.0, 0.0])
 
             # broadcast
-            self.tf_static_broadcaster.sendTransform(dest_wrt_world)
-
-            self.get_logger().info(f"PUBLISHED STATIC TRANSFORM FOR {dest}")
+            tf_list.append(dest_wrt_world)
+        return tf_list
 
     def make_static_transform(
         self, id, translation: list[float], rotation: list[float]
@@ -139,6 +145,9 @@ class MapMakerNode(Node):
         transform_stamped.transform = transform
         transform_stamped.child_frame_id = id
 
+        self.get_logger().info(
+            f"Made transform {transform_stamped.header} {transform_stamped.child_frame_id}"
+        )
         return transform_stamped
 
     def tf_callback(self, tfmessage: TFMessage):
