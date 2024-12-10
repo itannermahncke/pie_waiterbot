@@ -93,7 +93,9 @@ class ReachGoalNode(Node):
         """
         Confirm that landmarks are present in the tf tree.
         """
-        if self.tf_buffer.can_transform("world", self.destinations[0], Time(0, 0)):
+        if self.tf_buffer.can_transform(
+            "world", self.destinations[0], Time(nanoseconds=0)
+        ):
             self.get_logger().info("Transform quality confirmed, moving ahead")
         else:
             self.get_logger().info("No good tf yet. Waiting 1 sec")
