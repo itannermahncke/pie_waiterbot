@@ -115,7 +115,6 @@ class SerialAdapterNode(Node):
         # decode data
         if self.read_port is not None:
             line_data = self.read_port.readline().decode()
-            self.get_logger().info(f"Grabbed  serial line -{line_data}-")
         else:
             return
 
@@ -130,6 +129,7 @@ class SerialAdapterNode(Node):
                 self.goal_request_publisher.publish(
                     String(data=self.button_dest_table[msg_code])
                 )
+                self.get_logger().info(f"read button {msg_code}")
             # encoder data
             elif msg_code == "en":
                 self.drivetrain_publisher.publish(
@@ -149,6 +149,7 @@ class SerialAdapterNode(Node):
                 else:
                     return
                 self.strain_publisher.publish(Bool(data=boolean))
+                self.get_logger().info(f"read straingauge {msg_data[0]}")
             # color sensor
             elif msg_code == "cl":
                 self.color_publisher.publish(String(data=msg_data[0]))

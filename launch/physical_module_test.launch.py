@@ -14,7 +14,7 @@ def generate_launch_description():
         get_package_share_directory("pie_waiterbot"), "robot_info.yaml"
     )
     serial_config = os.path.join(
-        get_package_share_directory("pie_waiterbot"), "serial_config.yaml"
+        get_package_share_directory("pie_waiterbot"), "serial.yaml"
     )
 
     return LaunchDescription(
