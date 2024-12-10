@@ -47,11 +47,6 @@ def generate_launch_description():
             ),
             Node(
                 package="pie_waiterbot",
-                executable="dead_reckoning",
-                parameters=[robot_info],
-            ),
-            Node(
-                package="pie_waiterbot",
                 executable="goal_reach",
                 parameters=[landmark_poses, robot_info],
             ),
