@@ -2,6 +2,7 @@ import rclpy
 import rclpy.logging
 from rclpy.node import Node
 from rclpy.time import Time
+import time
 
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
@@ -85,6 +86,18 @@ class ReachGoalNode(Node):
 
         # latest Twist
         self.latest_twist = Twist()
+
+        self.confirm_tf()
+
+    def confirm_tf(self):
+        """
+        Confirm that landmarks are present in the tf tree.
+        """
+        if self.tf_buffer.wait_for_transform_async("world", self.destinations[0]):
+            self.get_logger().info("Transform quality confirmed, moving ahead")
+        else:
+            self.get_logger().info("No good tf yet. Waiting 1 sec")
+            time.sleep(1.0)
 
     def estop_callback(self, _: Empty):
         """
