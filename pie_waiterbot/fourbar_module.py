@@ -66,6 +66,7 @@ class FourbarModuleNode(Node):
             self.publisher_tick_rate, self.timer_callback
         )
         self.time = 0
+        self.retract_delay = 0
 
     def color_callback(self, string: String):
         """
@@ -113,10 +114,16 @@ class FourbarModuleNode(Node):
         Publishes the four bar status.
         """
         if self.task_status == 2:
+            self.retract_delay = 0
             self.time = self.time + self.publisher_tick_rate
             if self.time > 5:  # wait for 5 seconds before changing status to 0
                 self.change_status(3)
                 self.time = 0
+        if self.task_status == 1:
+            self.retract_delay = self.retract_delay + self.publisher_tick_rate
+            if self.time > 5:  # wait for 5 seconds before changing status to 0
+                self.change_status(2)
+                self.retract_delay = 0
 
     def change_status(self, status):
         """
