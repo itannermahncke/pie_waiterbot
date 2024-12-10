@@ -64,11 +64,6 @@ def generate_launch_description():
             ),
             Node(
                 package="pie_waiterbot",
-                executable="fourbar_module",
-                parameters=[robot_info],
-            ),
-            Node(
-                package="pie_waiterbot",
                 executable="path_planning",
                 parameters=[landmark_poses, robot_info],
             ),
