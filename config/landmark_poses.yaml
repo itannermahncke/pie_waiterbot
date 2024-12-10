@@ -5,11 +5,11 @@
     destination_ids: ['kitchen', 'table1', 'table2', 'table3']
 
     tag1_translation: [2.0, 0.0, 0.0]
-    tag1_rotation: [0.0, 0.0, 0.0]
+    tag1_rotation: [0.0, 0.0, -3.1415]
     tag5_translation: [5.222, 5.0, 0.0]
     tag5_rotation: [0.0, 0.0, 0.0]
     
     kitchen_coords: [0.0, 0.0, 0.0]
-    table1_coords: [1.0, 1.0, 0.0]
-    table2_coords: [1.0, 0.0, 0.0]
-    table3_coords: [0.0, 0.0, 0.0]
+    table1_coords: [2.0, 2.0, 0.0]
+    table2_coords: [0.0, 3.0, 0.0]
+    table3_coords: [2.0, 0.0, 0.0]

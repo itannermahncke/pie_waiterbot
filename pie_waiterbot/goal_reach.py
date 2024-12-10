@@ -93,12 +93,7 @@ class ReachGoalNode(Node):
         requires relaunch when this occurs for robot to continue working.
         """
         # kills timer and sends a zero-velocity twist
-        self.speed_interval.cancel()
         self.speeds_publisher.publish(Twist())
-
-        # resets goals
-        self.latest_goal_id = None
-        self.goal_status = True
 
     def latest_status_callback(self, goal: Bool):
         """
