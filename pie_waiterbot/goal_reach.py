@@ -137,14 +137,14 @@ class ReachGoalNode(Node):
 
             # if angle error is significant, correct
             if ang_error > self.tolerance:
-                self.get_logger().info(f"Ang error: {ang_error}")
+                self.get_logger().info(f"Angular error: {ang_error}")
                 twist.angular.z = self.directionless_min(
                     ang_error * self.ang_K, self.max_ang_vel
                 )
                 empty = False
             # if lin error is significant, correct
             elif lin_error > self.tolerance:
-                self.get_logger().info(f"Ang error: {lin_error}")
+                self.get_logger().info(f"Linear error: {lin_error}")
                 twist.linear.x = self.directionless_min(
                     lin_error * self.lin_K, self.max_lin_vel
                 )
@@ -154,16 +154,11 @@ class ReachGoalNode(Node):
                 self.get_logger().info(f"No error!")
                 self.goal_status_pub.publish(Bool(data=True))
 
-            # publish OR skip if identical to latest
-            if not (
-                twist.linear.x == self.latest_twist.linear.x
-                and twist.angular.z == self.latest_twist.angular.z
-            ):
+            self.speeds_publisher.publish(twist)
+            self.latest_twist = twist
+            # if we just sent a zero command, send it again
+            if empty:
                 self.speeds_publisher.publish(twist)
-                self.latest_twist = twist
-                # if we just sent a zero command, send it again
-                if empty:
-                    self.speeds_publisher.publish(twist)
 
     def calculate_error(self):
         """
@@ -193,6 +188,18 @@ class ReachGoalNode(Node):
             v = max(velocity, -1 * max_vel)
 
         return v
+
+    def angle_normalize(self, ang):
+        """
+                // reduce the angle
+        angle =  angle % 360;
+
+        // force it to be the positive remainder, so that 0 <= angle < 360
+        angle = (angle + 360) % 360;
+
+        // force into the minimum absolute value residue class, so that -180 < angle <= 180
+        if (angle > 180)
+            angle -= 360;"""
 
 
 def main(args=None):
