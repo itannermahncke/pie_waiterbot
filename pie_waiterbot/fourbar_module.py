@@ -17,7 +17,7 @@ class FourbarModuleNode(Node):
 
         # angle standards
         self.RESET = -1
-        self.EXTENDED = -90
+        self.EXTENDED = -120
 
         # state controls
         # 0: task not started
@@ -121,7 +121,7 @@ class FourbarModuleNode(Node):
                 self.time = 0
         if self.task_status == 1:
             self.retract_delay = self.retract_delay + self.publisher_tick_rate
-            if self.time > 5:  # wait for 5 seconds before changing status to 0
+            if self.retract_delay > 5:  # wait for 5 seconds before changing status to 0
                 self.change_status(2)
                 self.retract_delay = 0
 
