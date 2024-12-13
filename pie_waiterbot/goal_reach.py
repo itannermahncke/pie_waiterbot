@@ -134,13 +134,12 @@ class ReachGoalNode(Node):
         if self.latest_goal_id is not None and not self.goal_status:
             # calculate error
             lin_error, ang_error = self.calculate_error()
+            ang_error = self.angle_normalize(ang_error)
 
             # if angle error is significant, correct
             if ang_error > self.tolerance:
                 self.get_logger().info(f"Ang error: {ang_error}")
-                twist.angular.z = round(
-                    self.directionless_min(ang_error * self.ang_K, self.max_ang_vel), 6
-                )
+                twist.angular.z = self.max_ang_vel
                 empty = False
             # if lin error is significant, correct
             elif lin_error > self.tolerance:
@@ -194,17 +193,18 @@ class ReachGoalNode(Node):
 
         return v
 
-    def angle_normalize(self, ang):
+    def angle_normalize(self, angle):
         """
-                // reduce the angle
-        angle =  angle % 360;
-
-        // force it to be the positive remainder, so that 0 <= angle < 360
-        angle = (angle + 360) % 360;
-
-        // force into the minimum absolute value residue class, so that -180 < angle <= 180
-        if (angle > 180)
-            angle -= 360;"""
+        Reduce the angle, force it to fit in the range of -180 to 180.
+        """
+        # get remainder - put on unit circle
+        angle = angle % 360
+        # force to be positive
+        angle = (angle + 360) % 360
+        # place on -180 to 180 scale
+        if angle > 180:
+            angle -= 360
+        return angle
 
 
 def main(args=None):
