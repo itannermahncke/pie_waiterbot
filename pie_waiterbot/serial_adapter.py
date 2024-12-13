@@ -18,7 +18,7 @@ class SerialAdapterNode(Node):
         Initialize an instance of the SerialAdapterNode class.
         """
         super().__init__("serial_adapter", allow_undeclared_parameters=True)
-        baudRate = 9600
+        baudRate = 115200
 
         # retrieve outgoing codes
         self.get_logger().info("RETRIEVING PARAMS")
