@@ -129,6 +129,7 @@ class ReachGoalNode(Node):
         Calculate wheel speeds and publish.
         """
         twist = Twist()
+        empty = True
         # only do this if goal exists and is not yet met
         if self.latest_goal_id is not None and not self.goal_status:
             # calculate error
@@ -136,16 +137,21 @@ class ReachGoalNode(Node):
 
             # if angle error is significant, correct
             if ang_error > self.tolerance:
+                self.get_logger().info(f"Ang error: {ang_error}")
                 twist.angular.z = self.directionless_min(
                     ang_error * self.ang_K, self.max_ang_vel
                 )
+                empty = False
             # if lin error is significant, correct
             elif lin_error > self.tolerance:
+                self.get_logger().info(f"Ang error: {lin_error}")
                 twist.linear.x = self.directionless_min(
                     lin_error * self.lin_K, self.max_lin_vel
                 )
+                empty = False
             # if within tolerance, stop and change goal state
             else:
+                self.get_logger().info(f"No error!")
                 self.goal_status_pub.publish(Bool(data=True))
 
             # publish OR skip if identical to latest
@@ -155,6 +161,9 @@ class ReachGoalNode(Node):
             ):
                 self.speeds_publisher.publish(twist)
                 self.latest_twist = twist
+                # if we just sent a zero command, send it again
+                if empty:
+                    self.speeds_publisher.publish(twist)
 
     def calculate_error(self):
         """
@@ -180,10 +189,8 @@ class ReachGoalNode(Node):
         # we want to grab the number that is closest to 0.0
         if velocity >= 0:
             v = min(velocity, max_vel)
-            self.get_logger().info(f"Min btwn {velocity} and {max_vel} is {v}")
         if velocity < 0:
             v = max(velocity, -1 * max_vel)
-            self.get_logger().info(f"Max btwn {velocity} and {max_vel} is {v}")
 
         return v
 
