@@ -4,3 +4,4 @@
     goal_id: "None"
     goal_status: True
     module_status: 3
+    path_mode: "INTERMITTENT"

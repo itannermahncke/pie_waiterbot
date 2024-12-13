@@ -69,7 +69,11 @@ class PathPlanningNode(Node):
             self.get_parameter("module_status").get_parameter_value().integer_value
         )
 
-        # request queue
+        # request management and path planning type: INTERMITTENT or CONTINUAL
+        self.declare_parameter("path_mode", rclpy.Parameter.Type.STRING)
+        self.path_mode = (
+            self.get_parameter("path_mode").get_parameter_value().string_value
+        )
         self.request_queue = deque()
 
     def latest_goal_callback(self, goal: String):
@@ -120,9 +124,14 @@ class PathPlanningNode(Node):
         """
         # only move forward if the current goal is complete and the module is stationary
         if self.goal_status and self.module_status == 3:
-            # any table must return to the kitchen first
+            # if currently at a table
             if self.latest_goal_id != self.kitchen and self.latest_goal_id is not None:
-                self.request_queue.appendleft(self.kitchen)
+                # if intermittent mode, return to kitchen immediately
+                # if in continual mode, return to kitchen if queue is empty
+                if self.path_mode == "INTERMITTENT" or (
+                    self.path_mode == "CONTINUAL" and len(self.request_queue) == 0
+                ):
+                    self.request_queue.appendleft(self.kitchen)
 
             # only move forward if there is a next available goal, otherwise do nothing
             if len(self.request_queue) > 0:
