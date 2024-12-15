@@ -108,49 +108,57 @@ class SerialAdapterNode(Node):
         """
         Decode the latest line of serial sensor data.
         """
-        # decode data
+        # BODY SENSORS FIRST
         if self.read_port is not None:
-            line_data = self.read_port.readline().decode()
-            #self.get_logger().info(f"parsing data: {line_data}")
-        else:
-            return
+            body_line_data = self.read_port.readline().decode()
+            self.get_logger().info(f"parsing data: {line_data}")
 
-        # at this point, data should be present
-        if len(line_data) > 0:
-            # split up message and sort by letter code
-            serial_code = line_data[0:2]
-            msg_code = line_data[2:4]
-            msg_data = line_data[4:].split(",")
+            if len(body_line_data) > 0:
+                # split up message and sort by letter code
+                serial_code = body_line_data[0:2]
+                msg_code = body_line_data[2:4]
+                msg_data = body_line_data[4:].split(",")
 
-            # first, handle buttons
-            if msg_code in self.button_dest_table.keys():
-                self.goal_request_publisher.publish(
-                    String(data=self.button_dest_table[msg_code])
-                )
-                self.get_logger().info(f"read button {msg_code}")
-            # encoder data
-            elif msg_code == "en":
-                self.drivetrain_publisher.publish(
-                    Float32MultiArray(data=[float(msg_data[0]), float(msg_data[1])])
-                )
-            # IMU data
-            elif msg_code == "mu":
-                self.imu_publisher.publish(
-                    Float32MultiArray(data=[float(msg_data[0]), float(msg_data[1])])
-                )
-            # strain gauge
-            elif msg_code == "sg":
-                if msg_data[0] == "0":
-                    boolean = False
-                if msg_data[0] == "1":
-                    boolean = True
-                else:
-                    return
-                self.strain_publisher.publish(Bool(data=boolean))
-                self.get_logger().info(f"read straingauge {msg_data[0]}")
-            # color sensor
-            elif msg_code == "cl":
-                self.color_publisher.publish(String(data=msg_data[0]))
+                # first, handle buttons
+                if msg_code in self.button_dest_table.keys():
+                    self.goal_request_publisher.publish(
+                        String(data=self.button_dest_table[msg_code])
+                    )
+                    self.get_logger().info(f"read button {msg_code}")
+                # encoder data
+                elif msg_code == "en":
+                    self.drivetrain_publisher.publish(
+                        Float32MultiArray(data=[float(msg_data[0]), float(msg_data[1])])
+                    )
+                # IMU data
+                elif msg_code == "mu":
+                    self.imu_publisher.publish(
+                        Float32MultiArray(data=[float(msg_data[0]), float(msg_data[1])])
+                    )
+                # color sensor
+                elif msg_code == "cl":
+                    self.color_publisher.publish(String(data=msg_data[0]))
+
+        # MODULE SENSORS SECOND
+        if self.module_port is not None:
+            module_line_data = self.module_port.readline().decode()
+            # self.get_logger().info(f"parsing data: {line_data}")
+
+            if len(module_line_data) > 0:
+                # split up message and sort by letter code
+                serial_code = module_line_data[0:2]
+                msg_code = module_line_data[2:4]
+                msg_data = module_line_data[4:].split(",")
+                # strain gauge
+                if msg_code == "sg":
+                    if msg_data[0] == "0":
+                        boolean = False
+                    if msg_data[0] == "1":
+                        boolean = True
+                    else:
+                        return
+                    self.strain_publisher.publish(Bool(data=boolean))
+                    self.get_logger().info(f"read straingauge {msg_data[0]}")
 
     def cfg_msg(self, code, msg) -> str:
         """
