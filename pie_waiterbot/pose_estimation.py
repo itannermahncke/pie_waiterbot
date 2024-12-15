@@ -125,7 +125,7 @@ class PoseEstimationNode(Node):
                         )
                         full_transform = np.matmul(cam_to_world_mat, empty_arr)
 
-                        self.get_logger().info(f"Translation: {full_transform}")
+                        # self.get_logger().info(f"Translation: {full_transform}")
 
                         cur_pos = Point()
                         cur_pos.x = full_transform[0]
@@ -134,8 +134,14 @@ class PoseEstimationNode(Node):
                         quat = tf.quaternion_from_matrix(
                             np.matmul(
                                 tf.quaternion_matrix(quaternion_world),
-                                tf.inverse_matrix(tf.quaternion_matrix(quaternion)),
-                            )
+                                tf.quaternion_matrix(quaternion),
+                            ),
+                        )
+                        euler = tf.euler_from_quaternion(quat)
+                        new_z_angle = euler[2] + 0.78539816339
+                        quat = tf.quaternion_from_euler(euler[0], euler[1], new_z_angle)
+                        self.get_logger().info(
+                            f"Rotation: {tf.euler_from_quaternion(quat)}"
                         )
                         cur_quat = Quaternion(
                             x=quat[0], y=quat[1], z=quat[2], w=quat[3]
