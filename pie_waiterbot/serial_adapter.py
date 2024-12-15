@@ -111,7 +111,7 @@ class SerialAdapterNode(Node):
         # decode data
         if self.read_port is not None:
             line_data = self.read_port.readline().decode()
-            # self.get_logger().info(f"parsing data: {line_data}")
+            self.get_logger().info(f"parsing data: {line_data}")
         else:
             return
 
@@ -184,6 +184,7 @@ class SerialAdapterNode(Node):
         """
         Set port without overwriting it.
         """
+        self.get_logger().info(f"Attempting to set {port} to {which}")
         match which:
             case "write":
                 if self.write_port is None:
