@@ -138,7 +138,7 @@ class PoseEstimationNode(Node):
                             ),
                         )
                         euler = tf.euler_from_quaternion(quat)
-                        new_z_angle = euler[2] + 0.78539816339
+                        new_z_angle = euler[2] + 1.5708
                         quat = tf.quaternion_from_euler(euler[0], euler[1], new_z_angle)
                         self.get_logger().info(
                             f"Rotation: {tf.euler_from_quaternion(quat)}"
