@@ -90,6 +90,7 @@ class SerialAdapterNode(Node):
         serial_line = self.cfg_msg(self.dt_code, f"{twist.linear.x},{twist.angular.z}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
+            self.get_logger().info(f"Just wrote {self.write_port.readline().decode()}")
             self.get_logger().info(f"DRIVING: sending {serial_line}")
 
     def fourbar_callback(self, string: String):
