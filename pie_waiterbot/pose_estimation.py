@@ -89,10 +89,12 @@ class PoseEstimationNode(Node):
                         )
 
                         # get inverse of apriltag to camera matrix
-                        cam_to_april_mat = np.matmul(
-                            tf.translation_matrix(vector),
-                            tf.quaternion_matrix(quaternion),
-                        )
+                        cam_to_april_mat = tf.translation_matrix(vector)
+
+                        # np.matmul(
+                        #    tf.translation_matrix(vector),
+                        #    tf.quaternion_matrix(quaternion),
+                        # )
                         cam_to_april_mat = tf.inverse_matrix(cam_to_april_mat)
 
                         # find camera_wrt_world
@@ -125,7 +127,7 @@ class PoseEstimationNode(Node):
                         )
                         full_transform = np.matmul(cam_to_world_mat, empty_arr)
 
-                        # self.get_logger().info(f"Translation: {full_transform}")
+                        self.get_logger().info(f"Translation: {full_transform}")
 
                         cur_pos = Point()
                         cur_pos.x = full_transform[0]
