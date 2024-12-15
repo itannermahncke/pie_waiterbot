@@ -100,6 +100,7 @@ class ReachGoalNode(Node):
         Update local latest goal status.
         """
         self.goal_status = goal.data
+        self.get_logger().info(f"Changed status to {goal.data}")
 
     def goal_update_callback(self, goal_id: String):
         """
@@ -151,8 +152,6 @@ class ReachGoalNode(Node):
             # if within tolerance, stop and change goal state
             else:
                 self.get_logger().info(f"No error!")
-                self.goal_status = True
-                self.latest_goal_id = None
                 self.goal_status_pub.publish(Bool(data=True))
 
             # publish OR skip if identical to latest
