@@ -72,7 +72,9 @@ class SerialAdapterNode(Node):
         self.write_port = None
 
         # match ports
+        self.get_logger().info(f"Pairing ports in f{[port1, port2, port3]}")
         for port in [port1, port2, port3]:
+            self.get_logger().info(f"Testing {port}")
             self.match_port(port, baudRate)
 
         # for reading
@@ -166,6 +168,7 @@ class SerialAdapterNode(Node):
         try:
             test_port = serial.Serial(port, baudRate, timeout=1)
             data_line = test_port.readline().decode()
+            self.get_logger().info(f"Read the test line {data_line}")
             # write port
             if len(data_line) == 0:
                 self.set_port("write", test_port)
@@ -185,14 +188,17 @@ class SerialAdapterNode(Node):
             case "write":
                 if self.write_port is None:
                     self.write_port = port
+                    self.get_logger().info(f"Set {port} to {which}")
                     return
             case "read":
                 if self.read_port is None:
                     self.read_port = port
+                    self.get_logger().info(f"Set {port} to {which}")
                     return
             case "module":
                 if self.module_port is None:
                     self.module_port = port
+                    self.get_logger().info(f"Set {port} to {which}")
                     return
 
         self.get_logger().info(f"ATTEMPTING TO REWRITE PORT {which}")
