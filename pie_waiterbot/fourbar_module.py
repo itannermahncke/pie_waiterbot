@@ -16,8 +16,8 @@ class FourbarModuleNode(Node):
         super().__init__("fourbar_module")
 
         # angle standards
-        self.RESET = -1
-        self.EXTENDED = -120
+        self.RESET = 1
+        self.EXTENDED = 120
 
         # state controls
         # 0: task not started
