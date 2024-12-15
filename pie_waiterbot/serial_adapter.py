@@ -190,17 +190,23 @@ class SerialAdapterNode(Node):
             case "write":
                 if self.write_port is None:
                     self.write_port = port
-                    self.get_logger().info(f"Set {port} to {which}")
+                    self.get_logger().info(
+                        f"Set {port} to {which}, see {self.write_port}"
+                    )
                     return
             case "read":
                 if self.read_port is None:
                     self.read_port = port
-                    self.get_logger().info(f"Set {port} to {which}")
+                    self.get_logger().info(
+                        f"Set {port} to {which}, see {self.read_port}"
+                    )
                     return
             case "module":
                 if self.module_port is None:
                     self.module_port = port
-                    self.get_logger().info(f"Set {port} to {which}")
+                    self.get_logger().info(
+                        f"Set {port} to {which}, see {self.module_port}"
+                    )
                     return
 
         self.get_logger().error(f"ATTEMPTING TO REWRITE PORT {which}")
