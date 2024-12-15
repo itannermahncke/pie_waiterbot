@@ -70,7 +70,7 @@ class ReachGoalNode(Node):
         self.pose_subscriber = self.create_subscription(
             Pose, "pose_estimate", self.pose_update_callback, 10
         )
-        self.speed_interval = self.create_timer(0.1, self.control_loop)
+        self.speed_interval = self.create_timer(0.25, self.control_loop)
         self.speeds_publisher = self.create_publisher(Twist, "cmd_vel", 10)
         self.estop_subscriber = self.create_subscription(
             Empty, "e_stop", self.estop_callback, 10
@@ -82,7 +82,7 @@ class ReachGoalNode(Node):
         self.HI_LOW = [0.5, 0.9, 0.15, 0.272]
         self.max_ang_vel = self.HI_LOW[0]
         self.max_lin_vel = self.HI_LOW[3]
-        self.tolerance = 0.05
+        self.tolerance = 0.1
 
         # latest Twist
         self.latest_twist = Twist()
@@ -100,6 +100,7 @@ class ReachGoalNode(Node):
         Update local latest goal status.
         """
         self.goal_status = goal.data
+        self.get_logger().info(f"Changed status to {goal.data}")
 
     def goal_update_callback(self, goal_id: String):
         """
