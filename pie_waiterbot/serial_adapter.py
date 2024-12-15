@@ -117,8 +117,9 @@ class SerialAdapterNode(Node):
         # at this point, data should be present
         if len(line_data) > 0:
             # split up message and sort by letter code
-            msg_code = line_data[0:2]
-            msg_data = line_data[2:].split(",")
+            serial_code = line_data[0:2]
+            msg_code = line_data[2:4]
+            msg_data = line_data[4:].split(",")
 
             # first, handle buttons
             if msg_code in self.button_dest_table.keys():
