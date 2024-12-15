@@ -17,7 +17,7 @@ class FourbarModuleNode(Node):
 
         # angle standards
         self.RESET = 1
-        self.EXTENDED = 120
+        self.EXTENDED = 20
 
         # state controls
         # 0: task not started
