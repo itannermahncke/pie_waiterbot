@@ -18,10 +18,8 @@ class SerialAdapterNode(Node):
         Initialize an instance of the SerialAdapterNode class.
         """
         super().__init__("serial_adapter", allow_undeclared_parameters=True)
-        baudRate = 115200
 
         # retrieve outgoing codes
-        self.get_logger().info("RETRIEVING PARAMS")
         self.declare_parameter("drivetrain_code", rclpy.Parameter.Type.STRING)
         self.dt_code = (
             self.get_parameter("drivetrain_code").get_parameter_value().string_value
@@ -43,7 +41,6 @@ class SerialAdapterNode(Node):
             )
 
         # subscriptions to outgoing data
-        self.get_logger().info("SUBS")
         self.speeds_subscriber = self.create_subscription(
             Twist, "cmd_vel", self.drivetrain_callback, 10
         )
@@ -52,7 +49,6 @@ class SerialAdapterNode(Node):
         )
 
         # publishers for incoming data
-        self.get_logger().info("PUBS")
         self.goal_request_publisher = self.create_publisher(String, "goal_request", 10)
         self.drivetrain_publisher = self.create_publisher(
             Float32MultiArray, "drivetrain_encoder", 10
@@ -61,30 +57,26 @@ class SerialAdapterNode(Node):
         self.strain_publisher = self.create_publisher(Bool, "strain_gauge", 10)
         self.color_publisher = self.create_publisher(String, "color_sensor", 10)
 
-        # for writing
-        self.declare_parameter("serial_write", rclpy.Parameter.Type.STRING)
-        serial_write = (
-            self.get_parameter("serial_write").get_parameter_value().string_value
-        )
-        try:
-            self.write_port = serial.Serial(serial_write, baudRate, timeout=1)
-            self.get_logger().info("Write serial connected")
-        except:
-            self.write_port = None
-            self.get_logger().info("Write serial failed to connect")
+        # gather potential ports
+        self.declare_parameter("serial_port_1", rclpy.Parameter.Type.STRING)
+        port1 = self.get_parameter("serial_port_1").get_parameter_value().string_value
+        self.declare_parameter("serial_port_2", rclpy.Parameter.Type.STRING)
+        port2 = self.get_parameter("serial_port_2").get_parameter_value().string_value
+        self.declare_parameter("serial_port_3", rclpy.Parameter.Type.STRING)
+        port3 = self.get_parameter("serial_port_3").get_parameter_value().string_value
+
+        # empty ports to set
+        baudRate = 115200
+        self.module_port = None
+        self.read_port = None
+        self.write_port = None
+
+        # match ports
+        for port in [port1, port2, port3]:
+            self.match_port(port, baudRate)
 
         # for reading
         self.read_timer = self.create_timer(0.01, self.read_callback)
-        self.declare_parameter("serial_read", rclpy.Parameter.Type.STRING)
-        serial_read = (
-            self.get_parameter("serial_read").get_parameter_value().string_value
-        )
-        try:
-            self.read_port = serial.Serial(serial_read, baudRate, timeout=1)
-            self.get_logger().info("Read serial connected")
-        except:
-            self.read_port = None
-            self.get_logger().info("Read serial failed to connect")
 
         self.get_logger().info("INIT COMPLETE.")
 
@@ -166,6 +158,44 @@ class SerialAdapterNode(Node):
         ST,${stepper motor angle}
         """
         return code + "," + msg
+
+    def match_port(self, port, baudRate):
+        """
+        Determine which port is which and connect them.
+        """
+        try:
+            test_port = serial.Serial(port, baudRate, timeout=1)
+            data_line = test_port.readline().decode()
+            # write port
+            if len(data_line) == 0:
+                self.set_port("write", test_port)
+            elif data_line[:2] == "01":
+                self.set_port("read", test_port)
+            elif data_line[:2] == "02":
+                self.set_port("module", test_port)
+        except:
+            self.read_port = None
+            self.get_logger().info("Read serial failed to connect")
+
+    def set_port(self, which, port: serial.Serial):
+        """
+        Set port without overwriting it.
+        """
+        match which:
+            case "write":
+                if self.write_port is None:
+                    self.write_port = port
+                    return
+            case "read":
+                if self.read_port is None:
+                    self.read_port = port
+                    return
+            case "module":
+                if self.module_port is None:
+                    self.module_port = port
+                    return
+
+        self.get_logger().info(f"ATTEMPTING TO REWRITE PORT {which}")
 
 
 def main(args=None):

@@ -1,7 +1,8 @@
 /**:
   ros__parameters:
-    serial_write: "/dev/ttyACM1"
-    serial_read: "/dev/ttyACM0"
+    serial_port_1: "/dev/ttyACM0"
+    serial_port_2: "/dev/ttyACM1"
+    serial_port_3: "/dev/ttyACM2"
     drivetrain_code: "0"
     stepper_code: "1"
 
