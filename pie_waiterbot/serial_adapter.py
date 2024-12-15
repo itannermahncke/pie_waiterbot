@@ -152,13 +152,9 @@ class SerialAdapterNode(Node):
                 msg_data = module_line_data[4:].split(",")
                 # strain gauge
                 if msg_code == "sg":
-                    if msg_data[0] == "0":
-                        boolean = False
                     if msg_data[0] == "1":
                         boolean = True
-                    else:
-                        return
-                    self.strain_publisher.publish(Bool(data=boolean))
+                        self.strain_publisher.publish(Bool(data=boolean))
                     self.get_logger().info(f"read straingauge {msg_data[0]}")
 
     def cfg_msg(self, code, msg) -> str:
