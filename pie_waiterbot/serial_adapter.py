@@ -72,7 +72,6 @@ class SerialAdapterNode(Node):
         self.write_port = None
 
         # match ports
-        self.get_logger().info(f"Pairing ports in f{[port1, port2, port3]}")
         for port in [port1, port2, port3]:
             self.get_logger().info(f"Testing {port}")
             self.match_port(port, baudRate)
@@ -91,7 +90,7 @@ class SerialAdapterNode(Node):
         serial_line = self.cfg_msg(self.dt_code, f"{twist.linear.x},{twist.angular.z}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
-            self.get_logger().info(f"DRIVING FORWARD: sending {serial_line}")
+            self.get_logger().info(f"DRIVING: sending {serial_line}")
 
     def fourbar_callback(self, string: String):
         """
@@ -102,7 +101,7 @@ class SerialAdapterNode(Node):
         serial_line = self.cfg_msg(self.st_code, string.data)
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
-            self.get_logger().info(f"SENT FOURBAR ANGLE: {serial_line}")
+            self.get_logger().info(f"FOURBAR ANGLE: sending {serial_line}")
 
     def read_callback(self):
         """
@@ -171,14 +170,13 @@ class SerialAdapterNode(Node):
             self.get_logger().info(f"Read the test line {data_line}")
             # write port
             if len(data_line) == 0:
-                self.get_logger().info(f"Attempting to set {port} to {"write"}")
                 self.set_port("write", test_port)
             elif data_line[:2] == "01":
-                self.get_logger().info(f"Attempting to set {port} to {"read"}")
                 self.set_port("read", test_port)
             elif data_line[:2] == "02":
-                self.get_logger().info(f"Attempting to set {test_port} to {"module"}")
                 self.set_port("module", test_port)
+            else:
+                self.get_logger().error(f"No data header on {data_line}")
         except:
             self.read_port = None
             self.get_logger().info(f"serial {port} failed to connect")
@@ -187,7 +185,6 @@ class SerialAdapterNode(Node):
         """
         Set port without overwriting it.
         """
-        self.get_logger().info(f"Attempting to set {port} to {which}")
         match which:
             case "write":
                 if self.write_port is None:
@@ -205,7 +202,7 @@ class SerialAdapterNode(Node):
                     self.get_logger().info(f"Set {port} to {which}")
                     return
 
-        self.get_logger().info(f"ATTEMPTING TO REWRITE PORT {which}")
+        self.get_logger().error(f"ATTEMPTING TO REWRITE PORT {which}")
 
 
 def main(args=None):
