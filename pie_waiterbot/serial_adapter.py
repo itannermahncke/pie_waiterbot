@@ -175,7 +175,7 @@ class SerialAdapterNode(Node):
                 self.set_port("module", test_port)
         except:
             self.read_port = None
-            self.get_logger().info("Read serial failed to connect")
+            self.get_logger().info(f"serial {port} failed to connect")
 
     def set_port(self, which, port: serial.Serial):
         """
