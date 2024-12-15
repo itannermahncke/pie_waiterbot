@@ -72,31 +72,6 @@ class PoseEstimationNode(Node):
                             detections.header.stamp,
                         )
 
-                        vector = np.array(
-                            [
-                                apriltag_wrt_camera.transform.translation.x,
-                                -apriltag_wrt_camera.transform.translation.y,
-                                0,
-                            ]
-                        )
-                        quaternion = np.array(
-                            [
-                                apriltag_wrt_camera.transform.rotation.x,
-                                apriltag_wrt_camera.transform.rotation.y,
-                                apriltag_wrt_camera.transform.rotation.z,
-                                apriltag_wrt_camera.transform.rotation.w,
-                            ]
-                        )
-
-                        # get inverse of apriltag to camera matrix
-                        cam_to_april_mat = tf.translation_matrix(vector)
-
-                        # np.matmul(
-                        #    tf.translation_matrix(vector),
-                        #    tf.quaternion_matrix(quaternion),
-                        # )
-                        cam_to_april_mat = tf.inverse_matrix(cam_to_april_mat)
-
                         # find camera_wrt_world
                         vector_world = np.array(
                             [
@@ -114,17 +89,42 @@ class PoseEstimationNode(Node):
                             ]
                         )
 
+                        vector_apriltag = np.array(
+                            [
+                                -apriltag_wrt_camera.transform.translation.x,
+                                -apriltag_wrt_camera.transform.translation.y,
+                                0,
+                            ]
+                        )
+                        quaternion_apriltag = np.array(
+                            [
+                                apriltag_wrt_camera.transform.rotation.x,
+                                apriltag_wrt_camera.transform.rotation.y,
+                                apriltag_wrt_camera.transform.rotation.z,
+                                apriltag_wrt_camera.transform.rotation.w,
+                            ]
+                        )
+
+                        # get inverse of apriltag to camera matrix
+                        cam_to_april_mat = np.matmul(
+                            tf.inverse_matrix(tf.quaternion_matrix(quaternion_world)),
+                            tf.translation_matrix(vector_apriltag),
+                        )
+
                         april_to_world_mat = np.matmul(
+                            tf.inverse_matrix(tf.quaternion_matrix(quaternion_world)),
                             tf.inverse_matrix(tf.translation_matrix(vector_world)),
-                            tf.quaternion_matrix(quaternion_world),
                         )
 
                         empty_arr = np.array([0, 0, 0, 1])
                         empty_arr = np.transpose(empty_arr)
 
-                        cam_to_world_mat = np.matmul(
-                            april_to_world_mat, cam_to_april_mat
+                        april_tag_pos = np.matmul(april_to_world_mat, empty_arr)
+                        april_to_world = tf.translation_matrix(
+                            [april_tag_pos[0], april_tag_pos[1], 0]
                         )
+
+                        cam_to_world_mat = np.matmul(april_to_world, cam_to_april_mat)
                         full_transform = np.matmul(cam_to_world_mat, empty_arr)
 
                         self.get_logger().info(f"Translation: {full_transform}")
@@ -136,15 +136,15 @@ class PoseEstimationNode(Node):
                         quat = tf.quaternion_from_matrix(
                             np.matmul(
                                 tf.quaternion_matrix(quaternion_world),
-                                tf.quaternion_matrix(quaternion),
+                                tf.quaternion_matrix(quaternion_apriltag),
                             ),
                         )
                         euler = tf.euler_from_quaternion(quat)
                         new_z_angle = euler[2] + 1.5708
                         quat = tf.quaternion_from_euler(euler[0], euler[1], new_z_angle)
-                        self.get_logger().info(
-                            f"Rotation: {tf.euler_from_quaternion(quat)}"
-                        )
+                        # self.get_logger().info(
+                        #    f"Rotation: {tf.euler_from_quaternion(quat)}"
+                        # )
                         cur_quat = Quaternion(
                             x=quat[0], y=quat[1], z=quat[2], w=quat[3]
                         )
