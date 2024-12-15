@@ -52,18 +52,18 @@ class PoseEstimationNode(Node):
             tag_name = "tag36h11:" + str(detection.id)
             if detection.id in (1, 5):
                 # find initial relationships
-                apriltag_wrt_world = self.tf_buffer.lookup_transform(
-                    f"tag{detection.id}", "world", Time()
-                )
-                can_lookup = {
-                    self.tf_buffer.can_transform(
-                        detections.header.frame_id,
-                        tag_name,
-                        detections.header.stamp,
-                    )
-                }
 
                 try:
+                    apriltag_wrt_world = self.tf_buffer.lookup_transform(
+                        f"tag{detection.id}", "world", Time()
+                    )
+                    can_lookup = {
+                        self.tf_buffer.can_transform(
+                            detections.header.frame_id,
+                            tag_name,
+                            detections.header.stamp,
+                        )
+                    }
 
                     if can_lookup:
                         apriltag_wrt_camera = self.tf_buffer.lookup_transform(
