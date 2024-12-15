@@ -153,6 +153,13 @@ class ReachGoalNode(Node):
                 self.get_logger().info(f"No error!")
                 self.goal_status_pub.publish(Bool(data=True))
 
+                # this is to force it to stop asap
+                self.speeds_publisher.publish(twist)
+                self.latest_twist = twist
+                # if we just sent a zero command, send it again
+                if empty:
+                    self.speeds_publisher.publish(twist)
+
             # publish OR skip if identical to latest
             if not (
                 twist.linear.x == self.latest_twist.linear.x
