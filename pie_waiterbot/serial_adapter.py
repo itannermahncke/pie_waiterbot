@@ -171,10 +171,13 @@ class SerialAdapterNode(Node):
             self.get_logger().info(f"Read the test line {data_line}")
             # write port
             if len(data_line) == 0:
+                self.get_logger().info(f"Attempting to set {port} to {"write"}")
                 self.set_port("write", test_port)
             elif data_line[:2] == "01":
+                self.get_logger().info(f"Attempting to set {port} to {"read"}")
                 self.set_port("read", test_port)
             elif data_line[:2] == "02":
+                self.get_logger().info(f"Attempting to set {test_port} to {"module"}")
                 self.set_port("module", test_port)
         except:
             self.read_port = None
