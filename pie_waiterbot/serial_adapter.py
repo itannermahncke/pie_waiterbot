@@ -189,7 +189,6 @@ class SerialAdapterNode(Node):
             else:
                 self.get_logger().error(f"No data header on {data_line}")
         except:
-            self.read_port = None
             self.get_logger().info(f"serial {port} failed to connect")
 
     def set_port(self, which, port: serial.Serial):
