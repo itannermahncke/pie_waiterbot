@@ -111,7 +111,7 @@ class SerialAdapterNode(Node):
         # BODY SENSORS FIRST
         if self.read_port is not None:
             body_line_data = self.read_port.readline().decode()
-            self.get_logger().info(f"parsing data: {line_data}")
+            # self.get_logger().info(f"parsing data: {body_line_data}")
 
             if len(body_line_data) > 0:
                 # split up message and sort by letter code
@@ -138,7 +138,8 @@ class SerialAdapterNode(Node):
                 # color sensor
                 elif msg_code == "cl":
                     self.color_publisher.publish(String(data=msg_data[0]))
-
+        else:
+            self.get_logger().info("NO READ PORT")
         # MODULE SENSORS SECOND
         if self.module_port is not None:
             module_line_data = self.module_port.readline().decode()
