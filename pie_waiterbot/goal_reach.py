@@ -151,14 +151,9 @@ class ReachGoalNode(Node):
             # if within tolerance, stop and change goal state
             else:
                 self.get_logger().info(f"No error!")
+                self.goal_status = True
+                self.latest_goal_id = None
                 self.goal_status_pub.publish(Bool(data=True))
-
-                # this is to force it to stop asap
-                self.speeds_publisher.publish(twist)
-                self.latest_twist = twist
-                # if we just sent a zero command, send it again
-                if empty:
-                    self.speeds_publisher.publish(twist)
 
             # publish OR skip if identical to latest
             if not (
