@@ -138,8 +138,7 @@ class SerialAdapterNode(Node):
                 # color sensor
                 elif msg_code == "cl":
                     self.color_publisher.publish(String(data=msg_data[0]))
-        else:
-            self.get_logger().info("NO READ PORT")
+
         # MODULE SENSORS SECOND
         if self.module_port is not None:
             module_line_data = self.module_port.readline().decode()
@@ -155,6 +154,10 @@ class SerialAdapterNode(Node):
                     if msg_data[0] == "1":
                         boolean = True
                         self.strain_publisher.publish(Bool(data=boolean))
+                    elif msg_data[0] == "0":
+                        self.get_logger().info("heard a zero, no publish")
+                    else:
+                        self.get_logger().info(f"got this: {module_line_data}")
                     self.get_logger().info(f"read straingauge {msg_data[0]}")
 
     def cfg_msg(self, code, msg) -> str:
