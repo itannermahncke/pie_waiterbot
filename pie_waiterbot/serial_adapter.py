@@ -148,7 +148,7 @@ class SerialAdapterNode(Node):
                 # split up message and sort by letter code
                 serial_code = module_line_data[0:2]
                 msg_code = module_line_data[2:4]
-                msg_data = module_line_data[4:].split(",")
+                msg_data = module_line_data[4]
                 # strain gauge
                 if msg_code == "sg":
                     if msg_data[0] == "1":
