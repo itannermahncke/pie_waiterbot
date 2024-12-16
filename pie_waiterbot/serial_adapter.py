@@ -87,6 +87,7 @@ class SerialAdapterNode(Node):
         motors is received. Transmit it onto the serial port for the
         microcontroller.
         """
+        self.get_logger().info(f"RECEIVED TWIST: {twist}")
         serial_line = self.cfg_msg(self.dt_code, f"{twist.linear.x},{twist.angular.z}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
