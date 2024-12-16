@@ -24,7 +24,7 @@ class ReachGoalNode(Node):
 
     def __init__(self):
         """
-        Initialize an instance of the PathPlanningNode class.
+        Initialize an instance of the ReachGoalNode class.
         """
         super().__init__("goal_reach", allow_undeclared_parameters=True)
 
@@ -70,7 +70,7 @@ class ReachGoalNode(Node):
         self.pose_subscriber = self.create_subscription(
             Pose, "pose_estimate", self.pose_update_callback, 10
         )
-        self.speed_interval = self.create_timer(0.25, self.control_loop)
+        self.speed_interval = self.create_timer(0.05, self.control_loop)
         self.speeds_publisher = self.create_publisher(Twist, "cmd_vel", 10)
         self.estop_subscriber = self.create_subscription(
             Empty, "e_stop", self.estop_callback, 10
@@ -82,7 +82,8 @@ class ReachGoalNode(Node):
         self.HI_LOW = [0.5, 0.9, 0.15, 0.272]
         self.max_ang_vel = self.HI_LOW[0]
         self.max_lin_vel = self.HI_LOW[3]
-        self.tolerance = 0.1
+        self.ang_tol = 0.07
+        self.lin_tol = 0.05
 
         # latest Twist
         self.latest_twist = Twist()
@@ -136,15 +137,16 @@ class ReachGoalNode(Node):
             # calculate error
             lin_error, ang_error = self.calculate_error()
             ang_error = self.angle_normalize(ang_error)
+            self.get_logger().info(f"Ang error: {ang_error}, lin error: {lin_error}")
 
             # if angle error is significant, correct
-            if ang_error > self.tolerance:
-                self.get_logger().info(f"Ang error: {ang_error}")
+            if abs(ang_error) > self.ang_tol:
+                self.get_logger().info(f"Correcting angular")
                 twist.angular.z = self.max_ang_vel
                 empty = False
             # if lin error is significant, correct
-            elif lin_error > self.tolerance:
-                self.get_logger().info(f"Lin error: {lin_error}")
+            elif lin_error > self.lin_tol:
+                self.get_logger().info(f"Correcting linear")
                 twist.linear.x = round(
                     self.directionless_min(lin_error * self.lin_K, self.max_lin_vel), 6
                 )
@@ -196,16 +198,17 @@ class ReachGoalNode(Node):
 
     def angle_normalize(self, angle):
         """
-        Reduce the angle, force it to fit in the range of -180 to 180.
+        Reduce the angle, forcing it to fit in the range of -pi to pi.
         """
         # get remainder - put on unit circle
-        angle = angle % 360
-        # force to be positive
-        angle = (angle + 360) % 360
-        # place on -180 to 180 scale
-        if angle > 180:
-            angle -= 360
-        return angle
+        if abs(angle) > 2 * math.pi:
+            angle = angle % 2 * math.pi
+
+        # create negatives
+        if angle > math.pi:
+            angle = angle - 2 * math.pi
+
+        return round(angle, 3)
 
 
 def main(args=None):
