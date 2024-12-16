@@ -60,20 +60,38 @@ class DeadReckoningNode(Node):
             euler_angles = list(
                 euler_from_quaternion([orient.x, orient.y, orient.z, orient.w])
             )
-            euler_angles[2] = euler_angles[2] + angle_change
+            new_heading = self.angle_normalize(euler_angles[2] + angle_change)
+            self.get_logger().info(f"ROBOT ANGLE: {euler_angles[2]}")
             new_pose.orientation = self.make_quaternion_msg(
-                quaternion_from_euler(euler_angles[0], euler_angles[1], euler_angles[2])
+                quaternion_from_euler(euler_angles[0], euler_angles[1], new_heading)
             )
 
             # apply xy change
-            angle = (
-                euler_angles[2] + angle_change
-            )  # difference between current heading and angle change
+            if 0 <= euler_angles[2] < math.pi / 2:
+                alpha = euler_angles[2]
+                x_dir = 1
+                y_dir = 1
+            elif math.pi / 2 <= euler_angles[2] < math.pi:
+                alpha = math.pi - euler_angles[2]
+                x_dir = -1
+                y_dir = 1
+            elif math.pi <= euler_angles[2] < 3 * math.pi / 2:
+                alpha = euler_angles[2] - math.pi
+                x_dir = -1
+                y_dir = -1
+            elif 3 * math.pi / 2 < euler_angles[2] < 2 * math.pi:
+                alpha = 2 * math.pi - euler_angles[2]
+                x_dir = 1
+                y_dir = -1
+
+            # modify xy
             new_pose.position.x = (
-                linear_change * round(math.cos(angle), 3) + current_pose.position.x
+                x_dir * linear_change * round(math.cos(alpha), 3)
+                + current_pose.position.x
             )
             new_pose.position.y = (
-                linear_change * round(math.sin(angle), 3) + current_pose.position.y
+                y_dir * linear_change * round(math.sin(alpha), 3)
+                + current_pose.position.y
             )
 
             # update pose
@@ -99,6 +117,18 @@ class DeadReckoningNode(Node):
         quaternion.w = quat[3]
 
         return quaternion
+
+    def angle_normalize(self, angle):
+        """
+        Reduce the angle, force it to fit in the range of 0 to 2pi.
+        """
+        # get remainder - put on unit circle
+        if angle > 2 * math.pi:
+            angle = angle % 2 * math.pi
+        elif angle < 0:
+            angle = angle + 2 * math.pi
+
+        return round(angle, 3)
 
 
 def main(args=None):
