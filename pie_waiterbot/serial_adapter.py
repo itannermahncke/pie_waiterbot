@@ -87,6 +87,7 @@ class SerialAdapterNode(Node):
         motors is received. Transmit it onto the serial port for the
         microcontroller.
         """
+        self.get_logger().info(f"RECEIVED TWIST: {twist}")
         serial_line = self.cfg_msg(self.dt_code, f"{twist.linear.x},{twist.angular.z}")
         if self.write_port is not None:
             self.write_port.write(serial_line.encode())
@@ -138,8 +139,7 @@ class SerialAdapterNode(Node):
                 # color sensor
                 elif msg_code == "cl":
                     self.color_publisher.publish(String(data=msg_data[0]))
-        else:
-            self.get_logger().info("NO READ PORT")
+
         # MODULE SENSORS SECOND
         if self.module_port is not None:
             module_line_data = self.module_port.readline().decode()
@@ -149,12 +149,16 @@ class SerialAdapterNode(Node):
                 # split up message and sort by letter code
                 serial_code = module_line_data[0:2]
                 msg_code = module_line_data[2:4]
-                msg_data = module_line_data[4:].split(",")
+                msg_data = module_line_data[4]
                 # strain gauge
                 if msg_code == "sg":
                     if msg_data[0] == "1":
                         boolean = True
                         self.strain_publisher.publish(Bool(data=boolean))
+                    elif msg_data[0] == "0":
+                        self.get_logger().info("heard a zero, no publish")
+                    else:
+                        self.get_logger().info(f"got this: {module_line_data}")
                     self.get_logger().info(f"read straingauge {msg_data[0]}")
 
     def cfg_msg(self, code, msg) -> str:
