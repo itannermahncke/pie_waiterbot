@@ -10,6 +10,7 @@ from tf2_ros.transform_listener import TransformListener
 import tf_transformations as tf
 from tf2_msgs.msg import TFMessage
 import numpy as np
+import cv2 as cv
 import time
 
 
@@ -48,9 +49,11 @@ class PoseEstimationNode(Node):
         Callback when an array of AprilTag detections is received. Return
         robot pose within world frame and publish.
         """
+        img = np.zeros((512, 512, 3), np.uint8)
+        img = cv.circle(img, (256, 256), 10, (255, 255, 255), -1)
         for detection in detections.detections:
             tag_name = "tag36h11:" + str(detection.id)
-            if detection.id in (1, 5):
+            if detection.id in (1, 2, 5):
                 # find initial relationships
 
                 try:
@@ -92,7 +95,7 @@ class PoseEstimationNode(Node):
                         vector_apriltag = np.array(
                             [
                                 -apriltag_wrt_camera.transform.translation.x,
-                                -apriltag_wrt_camera.transform.translation.y,
+                                -apriltag_wrt_camera.transform.translation.z,
                                 0,
                             ]
                         )
@@ -124,27 +127,34 @@ class PoseEstimationNode(Node):
                             [april_tag_pos[0], april_tag_pos[1], 0]
                         )
 
-                        cam_to_world_mat = np.matmul(april_to_world, cam_to_april_mat)
-                        full_transform = np.matmul(cam_to_world_mat, empty_arr)
+                        camera_pos_wrt_apriltag = np.matmul(cam_to_april_mat, empty_arr)
+                        full_transform = np.matmul(
+                            april_to_world, camera_pos_wrt_apriltag
+                        )
 
-                        self.get_logger().info(f"Translation: {full_transform}")
+                        pos_x = 256 + full_transform[0] * 85
+                        pos_y = 256 - full_transform[1] * 85
+                        tag_pos_x = 256 + april_tag_pos[0] * 85
+                        tag_pos_y = 256 - april_tag_pos[1] * 85
+                        # self.get_logger().info(f"Transform: {full_transform}")
+                        img = cv.circle(
+                            img, (int(pos_x), int(pos_y)), 10, (0, 0, 255), -1
+                        )
+                        img = cv.circle(
+                            img, (int(tag_pos_x), int(tag_pos_y)), 10, (255, 0, 0), -1
+                        )
 
                         cur_pos = Point()
                         cur_pos.x = full_transform[0]
                         cur_pos.y = full_transform[1]
                         cur_pos.z = full_transform[2]
-                        quat = tf.quaternion_from_matrix(
-                            np.matmul(
-                                tf.quaternion_matrix(quaternion_world),
-                                tf.quaternion_matrix(quaternion_apriltag),
-                            ),
-                        )
-                        euler = tf.euler_from_quaternion(quat)
-                        new_z_angle = euler[2] + 1.5708
-                        quat = tf.quaternion_from_euler(euler[0], euler[1], new_z_angle)
-                        # self.get_logger().info(
-                        #    f"Rotation: {tf.euler_from_quaternion(quat)}"
-                        # )
+
+                        euler_apriltag = tf.euler_from_quaternion(quaternion_apriltag)
+                        euler_world = tf.euler_from_quaternion(quaternion_world)
+                        new_z_angle = -euler_apriltag[2] + 1.57 - euler_world[2]
+                        quat = tf.quaternion_from_euler(0, 0, new_z_angle)
+                        self.get_logger().info(f"Rotation: {new_z_angle}")
+
                         cur_quat = Quaternion(
                             x=quat[0], y=quat[1], z=quat[2], w=quat[3]
                         )
@@ -154,6 +164,8 @@ class PoseEstimationNode(Node):
                         self.pose_publisher.publish(cur_pose)
                 except:
                     self.get_logger().info("Error occured!")
+        # cv.imshow("Apriltag Pose Estimation", img)
+        # cv.waitKey(1)
 
 
 def main(args=None):

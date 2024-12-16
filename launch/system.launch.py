@@ -28,9 +28,10 @@ def generate_launch_description():
         package="apriltag_ros",
         executable="apriltag_node",
         arguments=[
-            "--remap",
+            "--ros-args",
+            "-r",
             "image_rect:=/image_raw",
-            "--remap",
+            "-r",
             "camera_info:=/camera_info",
             "--params-file",
             "/home/waiterbot/ros2_ws/src/apriltag_ros/cfg/tags_36h11.yaml",
