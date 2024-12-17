@@ -108,6 +108,16 @@ class PoseEstimationNode(Node):
                             ]
                         )
 
+                        euler_apriltag = tf.euler_from_quaternion(quaternion_apriltag)
+                        euler_world = tf.euler_from_quaternion(quaternion_world)
+                        new_z_angle = -euler_apriltag[2] + 1.57 - euler_world[2]
+                        quat = tf.quaternion_from_euler(0, 0, new_z_angle)
+                        self.get_logger().info(f"Rotation: {euler_world}")
+
+                        cur_quat = Quaternion(
+                            x=quat[0], y=quat[1], z=quat[2], w=quat[3]
+                        )
+
                         # get inverse of apriltag to camera matrix
                         cam_to_april_mat = np.matmul(
                             tf.inverse_matrix(tf.quaternion_matrix(quaternion_world)),
@@ -145,20 +155,15 @@ class PoseEstimationNode(Node):
                         )
 
                         cur_pos = Point()
+
+                        # set point
                         cur_pos.x = full_transform[0]
                         cur_pos.y = full_transform[1]
                         cur_pos.z = full_transform[2]
 
-                        euler_apriltag = tf.euler_from_quaternion(quaternion_apriltag)
-                        euler_world = tf.euler_from_quaternion(quaternion_world)
-                        new_z_angle = -euler_apriltag[2] + 1.57 - euler_world[2]
-                        quat = tf.quaternion_from_euler(0, 0, new_z_angle)
-                        # self.get_logger().info(f"Rotation: {new_z_angle}")
-
-                        cur_quat = Quaternion(
-                            x=quat[0], y=quat[1], z=quat[2], w=quat[3]
-                        )
                         cur_pose = Pose()
+
+                        # set pose
                         cur_pose.position = cur_pos
                         cur_pose.orientation = cur_quat
                         self.pose_publisher.publish(cur_pose)
