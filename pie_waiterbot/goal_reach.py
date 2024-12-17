@@ -108,13 +108,14 @@ class ReachGoalNode(Node):
         Callback function when a button press indicates that the robot has a
         new goal to navigate towards.
         """
-        twist = Twist()
-        twist.angular.z = 0.2
-        self.speeds_publisher.publish(twist)
-        time.sleep(8)
-        empty_twist = Twist()
-        self.speeds_publisher.publish(empty_twist)
-        self.latest_goal_id = goal_id.data
+        if goal_id == "kitchen":
+            twist = Twist()
+            twist.angular.z = 0.5
+            self.speeds_publisher.publish(twist)
+            time.sleep(8)
+            empty_twist = Twist()
+            self.speeds_publisher.publish(empty_twist)
+            self.latest_goal_id = goal_id.data
         self.goal_status_pub.publish(Bool(data=False))
 
     def pose_update_callback(self, pose: Pose):
