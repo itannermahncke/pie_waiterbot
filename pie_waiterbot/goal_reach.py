@@ -115,7 +115,7 @@ class ReachGoalNode(Node):
             time.sleep(8)
             empty_twist = Twist()
             self.speeds_publisher.publish(empty_twist)
-            self.latest_goal_id = goal_id.data
+        self.latest_goal_id = goal_id.data
         self.goal_status_pub.publish(Bool(data=False))
 
     def pose_update_callback(self, pose: Pose):
