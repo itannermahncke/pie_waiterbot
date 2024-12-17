@@ -7,9 +7,9 @@
     tag1_translation: [3.0, 1.0, 0.0]
     tag1_rotation: [0.0, 0.0, -1.57]
     tag2_translation: [1.0, -1.0, 0.0]
-    tag2_rotation: [0.0, 0.0, -3.14]
+    tag2_rotation: [0.0, 0.0, 3.14]
     
     kitchen_coords: [0.0, 0.0, 0.0]
-    table1_coords: [3.0, 0.0, 0.0]
+    table1_coords: [2.0, 0.0, 0.0]
     table2_coords: [0.0, 5.0, 0.0]
     table3_coords: [2.0, 3.0, 0.0]
