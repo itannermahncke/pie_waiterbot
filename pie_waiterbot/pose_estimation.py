@@ -53,7 +53,7 @@ class PoseEstimationNode(Node):
         img = cv.circle(img, (256, 256), 10, (255, 255, 255), -1)
         for detection in detections.detections:
             tag_name = "tag36h11:" + str(detection.id)
-            if detection.id in (1, 2, 5):
+            if detection.id in (1, 2, 3, 4):
                 # find initial relationships
 
                 try:
@@ -163,7 +163,7 @@ class PoseEstimationNode(Node):
                         cur_pose.orientation = cur_quat
                         self.pose_publisher.publish(cur_pose)
                 except:
-                    pass # self.get_logger().info("Error occured!")
+                    pass  # self.get_logger().info("Error occured!")
         # cv.imshow("Apriltag Pose Estimation", img)
         # cv.waitKey(1)
 
