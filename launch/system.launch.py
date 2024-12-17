@@ -60,6 +60,11 @@ def generate_launch_description():
             ),
             Node(
                 package="pie_waiterbot",
+                executable="fourbar_module",
+                parameters=[robot_info],
+            ),
+            Node(
+                package="pie_waiterbot",
                 executable="serial_adapter",
                 parameters=[serial_config],
             ),
