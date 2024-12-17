@@ -108,7 +108,7 @@ class ReachGoalNode(Node):
         Callback function when a button press indicates that the robot has a
         new goal to navigate towards.
         """
-        if goal_id == "kitchen":
+        if goal_id.data == "kitchen":
             twist = Twist()
             twist.angular.z = 0.5
             self.speeds_publisher.publish(twist)
