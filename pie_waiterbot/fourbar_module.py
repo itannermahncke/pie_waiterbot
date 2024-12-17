@@ -16,7 +16,7 @@ class FourbarModuleNode(Node):
         super().__init__("fourbar_module")
 
         # angle standards
-        self.RESET = 1
+        self.RESET = 5
         self.EXTENDED = 120
 
         # state controls

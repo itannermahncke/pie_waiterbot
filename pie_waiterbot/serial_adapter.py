@@ -156,10 +156,11 @@ class SerialAdapterNode(Node):
                         boolean = True
                         self.strain_publisher.publish(Bool(data=boolean))
                     elif msg_data[0] == "0":
-                        self.get_logger().info("heard a zero, no publish")
+                        #self.get_logger().info("heard a zero, no publish")
+                        pass
                     else:
                         self.get_logger().info(f"got this: {module_line_data}")
-                    self.get_logger().info(f"read straingauge {msg_data[0]}")
+                    #self.get_logger().info(f"read straingauge {msg_data[0]}")
 
     def cfg_msg(self, code, msg) -> str:
         """
