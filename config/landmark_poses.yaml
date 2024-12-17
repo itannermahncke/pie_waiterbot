@@ -4,7 +4,7 @@
     apriltag_ids: ['tag1', 'tag2', 'tag3']
     destination_ids: ['kitchen', 'table1', 'table2', 'table3']
 
-    tag1_translation: [2.65, 1.0, 0.0]
+    tag1_translation: [2.4, 1.0, 0.0]
     tag1_rotation: [0.0, 0.0, -1.57]
     tag2_translation: [0.0, -1.0, 0.0]
     tag2_rotation: [0.0, 0.0, 3.14]
