@@ -164,6 +164,11 @@ class ReachGoalNode(Node):
                 self.get_logger().info(f"No error!")
                 self.goal_status_pub.publish(Bool(data=True))
 
+            if lin_error < self.lin_tol:
+                self.get_logger().info(f"No error!")
+                self.goal_status_pub.publish(Bool(data=True))
+                empty = True
+
             # publish OR skip if identical to latest
             if not (
                 twist.linear.x == self.latest_twist.linear.x
