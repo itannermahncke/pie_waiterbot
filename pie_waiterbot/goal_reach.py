@@ -82,8 +82,8 @@ class ReachGoalNode(Node):
         self.HI_LOW = [0.5, 0.9, 0.15, 0.272]
         self.max_ang_vel = self.HI_LOW[0]
         self.max_lin_vel = self.HI_LOW[3]
-        self.ang_tol = 0.07
-        self.lin_tol = 0.05
+        self.ang_tol = 0.2
+        self.lin_tol = 0.1
 
         # latest Twist
         self.latest_twist = Twist()
