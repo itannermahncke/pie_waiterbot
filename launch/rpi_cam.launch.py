@@ -26,7 +26,7 @@ def generate_launch_description():
             "-r",
             "camera_info:=/camera_info",
             "--params-file",
-            "/home/koroko/ros2_ws/src/apriltag_ros/cfg/tags_36h11.yaml",
+            "/home/waiterbot/ros2_ws/src/apriltag_ros/cfg/tags_36h11.yaml",
         ],
         output="screen",
     )
