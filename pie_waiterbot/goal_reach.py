@@ -147,29 +147,29 @@ class ReachGoalNode(Node):
             self.get_logger().info(f"Ang error: {ang_error}, lin error: {lin_error}")
 
             # if angle error is significant, correct
-            if abs(ang_error) > self.ang_tol:
-                self.get_logger().info(f"Correcting angular")
-                twist.angular.z = self.max_ang_vel * (ang_error / abs(ang_error))
-                # round(self.directionless_min(ang_error * self.ang_K, self.max_ang_vel), 6)
-                empty = False
-            # if lin error is significant, correct
-            elif lin_error > self.lin_tol:
-                self.get_logger().info(f"Correcting linear")
-                twist.linear.x = round(
-                    self.directionless_min(lin_error * self.lin_K, self.max_lin_vel), 6
-                )
-                empty = False
-            # if within tolerance, stop and change goal state
-            else:
-                self.get_logger().info(f"No error!")
-                self.goal_status_pub.publish(Bool(data=True))
-
             if lin_error < self.lin_tol:
                 self.get_logger().info(f"No error!")
                 self.goal_status_pub.publish(Bool(data=True))
-                empty = True
-                self.speeds_publisher.publish(twist)
-                self.speeds_publisher.publish(twist)
+            else:
+                if abs(ang_error) > self.ang_tol:
+                    self.get_logger().info(f"Correcting angular")
+                    twist.angular.z = self.max_ang_vel * (ang_error / abs(ang_error))
+                    # round(self.directionless_min(ang_error * self.ang_K, self.max_ang_vel), 6)
+                    empty = False
+                # if lin error is significant, correct
+                elif lin_error > self.lin_tol:
+                    self.get_logger().info(f"Correcting linear")
+                    twist.linear.x = round(
+                        self.directionless_min(
+                            lin_error * self.lin_K, self.max_lin_vel
+                        ),
+                        6,
+                    )
+                    empty = False
+                # if within tolerance, stop and change goal state
+                else:
+                    self.get_logger().info(f"No error!")
+                    self.goal_status_pub.publish(Bool(data=True))
 
             # publish OR skip if identical to latest
             if not (
