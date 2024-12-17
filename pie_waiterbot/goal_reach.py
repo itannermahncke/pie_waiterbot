@@ -112,7 +112,7 @@ class ReachGoalNode(Node):
             twist = Twist()
             twist.angular.z = 0.5
             self.speeds_publisher.publish(twist)
-            time.sleep(8)
+            time.sleep(7)
             empty_twist = Twist()
             self.speeds_publisher.publish(empty_twist)
         self.latest_goal_id = goal_id.data

@@ -5,7 +5,7 @@
     destination_ids: ['kitchen', 'table1', 'table2', 'table3']
 
     tag1_translation: [0.0, 1.0, 0.0]
-    tag1_rotation: [0.0, 0.0, -1.57]
+    tag1_rotation: [0.0, 0.0, 1.57]
     tag2_translation: [0.0, -1.0, 0.0]
     tag2_rotation: [0.0, 0.0, 3.14]
     tag3_translation: [3.0, 0.0, 0.0]
