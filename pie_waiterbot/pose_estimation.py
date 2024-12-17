@@ -153,7 +153,7 @@ class PoseEstimationNode(Node):
                         euler_world = tf.euler_from_quaternion(quaternion_world)
                         new_z_angle = -euler_apriltag[2] + 1.57 - euler_world[2]
                         quat = tf.quaternion_from_euler(0, 0, new_z_angle)
-                        self.get_logger().info(f"Rotation: {new_z_angle}")
+                        # self.get_logger().info(f"Rotation: {new_z_angle}")
 
                         cur_quat = Quaternion(
                             x=quat[0], y=quat[1], z=quat[2], w=quat[3]
@@ -163,7 +163,7 @@ class PoseEstimationNode(Node):
                         cur_pose.orientation = cur_quat
                         self.pose_publisher.publish(cur_pose)
                 except:
-                    self.get_logger().info("Error occured!")
+                    pass # self.get_logger().info("Error occured!")
         # cv.imshow("Apriltag Pose Estimation", img)
         # cv.waitKey(1)
 

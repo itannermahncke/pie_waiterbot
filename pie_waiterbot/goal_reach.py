@@ -80,10 +80,10 @@ class ReachGoalNode(Node):
         self.ang_K = 0.5
         self.lin_K = 0.8
         self.HI_LOW = [0.5, 0.9, 0.15, 0.272]
-        self.max_ang_vel = self.HI_LOW[0]
+        self.max_ang_vel = self.HI_LOW[2]
         self.max_lin_vel = self.HI_LOW[3]
-        self.ang_tol = 0.07
-        self.lin_tol = 0.05
+        self.ang_tol = 0.2
+        self.lin_tol = 0.1
 
         # latest Twist
         self.latest_twist = Twist()
@@ -142,7 +142,8 @@ class ReachGoalNode(Node):
             # if angle error is significant, correct
             if abs(ang_error) > self.ang_tol:
                 self.get_logger().info(f"Correcting angular")
-                twist.angular.z = self.max_ang_vel
+                twist.angular.z = self.max_ang_vel * (ang_error / abs(ang_error))
+                # round(self.directionless_min(ang_error * self.ang_K, self.max_ang_vel), 6)
                 empty = False
             # if lin error is significant, correct
             elif lin_error > self.lin_tol:
