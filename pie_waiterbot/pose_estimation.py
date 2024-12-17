@@ -55,7 +55,6 @@ class PoseEstimationNode(Node):
             tag_name = "tag36h11:" + str(detection.id)
             if detection.id in (1, 2, 3, 4):
                 # find initial relationships
-
                 try:
                     apriltag_wrt_world = self.tf_buffer.lookup_transform(
                         f"tag{detection.id}", "world", Time()
@@ -117,22 +116,11 @@ class PoseEstimationNode(Node):
                             x=quat[0], y=quat[1], z=quat[2], w=quat[3]
                         )
 
-                        if euler_world[2] == -3.14:
-                            cam_to_april_mat = np.array(
-                                [
-                                    apriltag_wrt_camera.transform.translation.z,
-                                    apriltag_wrt_camera.transform.translation.x,
-                                    0,
-                                ]
-                            )
-                        else:
-                            # get inverse of apriltag to camera matrix
-                            cam_to_april_mat = np.matmul(
-                                tf.inverse_matrix(
-                                    tf.quaternion_matrix(quaternion_world)
-                                ),
-                                tf.translation_matrix(vector_apriltag),
-                            )
+                        # get inverse of apriltag to camera matrix
+                        cam_to_april_mat = np.matmul(
+                            tf.inverse_matrix(tf.quaternion_matrix(quaternion_world)),
+                            tf.translation_matrix(vector_apriltag),
+                        )
 
                         april_to_world_mat = np.matmul(
                             tf.inverse_matrix(tf.quaternion_matrix(quaternion_world)),
@@ -148,6 +136,18 @@ class PoseEstimationNode(Node):
                         )
 
                         camera_pos_wrt_apriltag = np.matmul(cam_to_april_mat, empty_arr)
+                        if euler_world[2] == -3.14:
+                            camera_pos_wrt_apriltag = np.array(
+                                [
+                                    -apriltag_wrt_camera.transform.translation.x,
+                                    apriltag_wrt_camera.transform.translation.z,
+                                    0,
+                                    1,
+                                ]
+                            )
+                            camera_pos_wrt_apriltag = np.transpose(
+                                camera_pos_wrt_apriltag
+                            )
                         full_transform = np.matmul(
                             april_to_world, camera_pos_wrt_apriltag
                         )
