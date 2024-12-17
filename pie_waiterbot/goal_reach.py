@@ -168,6 +168,8 @@ class ReachGoalNode(Node):
                 self.get_logger().info(f"No error!")
                 self.goal_status_pub.publish(Bool(data=True))
                 empty = True
+                self.speeds_publisher.publish(twist)
+                self.speeds_publisher.publish(twist)
 
             # publish OR skip if identical to latest
             if not (
