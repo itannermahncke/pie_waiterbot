@@ -112,17 +112,27 @@ class PoseEstimationNode(Node):
                         euler_world = tf.euler_from_quaternion(quaternion_world)
                         new_z_angle = -euler_apriltag[2] + 1.57 - euler_world[2]
                         quat = tf.quaternion_from_euler(0, 0, new_z_angle)
-                        self.get_logger().info(f"Rotation: {euler_world}")
 
                         cur_quat = Quaternion(
                             x=quat[0], y=quat[1], z=quat[2], w=quat[3]
                         )
 
-                        # get inverse of apriltag to camera matrix
-                        cam_to_april_mat = np.matmul(
-                            tf.inverse_matrix(tf.quaternion_matrix(quaternion_world)),
-                            tf.translation_matrix(vector_apriltag),
-                        )
+                        if euler_world[2] == -3.14:
+                            cam_to_april_mat = np.array(
+                                [
+                                    apriltag_wrt_camera.transform.translation.z,
+                                    apriltag_wrt_camera.transform.translation.x,
+                                    0,
+                                ]
+                            )
+                        else:
+                            # get inverse of apriltag to camera matrix
+                            cam_to_april_mat = np.matmul(
+                                tf.inverse_matrix(
+                                    tf.quaternion_matrix(quaternion_world)
+                                ),
+                                tf.translation_matrix(vector_apriltag),
+                            )
 
                         april_to_world_mat = np.matmul(
                             tf.inverse_matrix(tf.quaternion_matrix(quaternion_world)),
