@@ -142,7 +142,9 @@ class ReachGoalNode(Node):
             # if angle error is significant, correct
             if abs(ang_error) > self.ang_tol:
                 self.get_logger().info(f"Correcting angular")
-                twist.angular.z = self.max_ang_vel * (ang_error / abs(ang_error))
+                twist.angular.z = round(
+                    self.directionless_min(ang_error * self.ang_K, self.max_ang_vel), 6
+                )
                 empty = False
             # if lin error is significant, correct
             elif lin_error > self.lin_tol:
