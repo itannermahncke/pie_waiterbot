@@ -51,11 +51,11 @@ class PoseEstimationNode(Node):
         """
         img = np.zeros((512, 512, 3), np.uint8)
         img = cv.circle(img, (256, 256), 10, (255, 255, 255), -1)
+        minimum_dist = 100
         for detection in detections.detections:
             tag_name = "tag36h11:" + str(detection.id)
-            if detection.id in (1, 2, 5):
+            if detection.id in (1, 2, 3, 4):
                 # find initial relationships
-
                 try:
                     apriltag_wrt_world = self.tf_buffer.lookup_transform(
                         f"tag{detection.id}", "world", Time()
@@ -75,95 +75,133 @@ class PoseEstimationNode(Node):
                             detections.header.stamp,
                         )
 
-                        # find camera_wrt_world
-                        vector_world = np.array(
-                            [
-                                apriltag_wrt_world.transform.translation.x,
-                                apriltag_wrt_world.transform.translation.y,
-                                0,
-                            ]
-                        )
-                        quaternion_world = np.array(
-                            [
-                                apriltag_wrt_world.transform.rotation.x,
-                                apriltag_wrt_world.transform.rotation.y,
-                                apriltag_wrt_world.transform.rotation.z,
-                                apriltag_wrt_world.transform.rotation.w,
-                            ]
+                        dist = (
+                            apriltag_wrt_camera.transform.translation.x**2
+                            + apriltag_wrt_camera.transform.translation.z**2
                         )
 
-                        vector_apriltag = np.array(
-                            [
-                                -apriltag_wrt_camera.transform.translation.x,
-                                -apriltag_wrt_camera.transform.translation.z,
-                                0,
-                            ]
-                        )
-                        quaternion_apriltag = np.array(
-                            [
-                                apriltag_wrt_camera.transform.rotation.x,
-                                apriltag_wrt_camera.transform.rotation.y,
-                                apriltag_wrt_camera.transform.rotation.z,
-                                apriltag_wrt_camera.transform.rotation.w,
-                            ]
-                        )
+                        if dist < minimum_dist:
 
-                        # get inverse of apriltag to camera matrix
-                        cam_to_april_mat = np.matmul(
-                            tf.inverse_matrix(tf.quaternion_matrix(quaternion_world)),
-                            tf.translation_matrix(vector_apriltag),
-                        )
+                            minimum_dist = dist
 
-                        april_to_world_mat = np.matmul(
-                            tf.inverse_matrix(tf.quaternion_matrix(quaternion_world)),
-                            tf.inverse_matrix(tf.translation_matrix(vector_world)),
-                        )
+                            # find camera_wrt_world
+                            vector_world = np.array(
+                                [
+                                    apriltag_wrt_world.transform.translation.x,
+                                    apriltag_wrt_world.transform.translation.y,
+                                    0,
+                                ]
+                            )
+                            quaternion_world = np.array(
+                                [
+                                    apriltag_wrt_world.transform.rotation.x,
+                                    apriltag_wrt_world.transform.rotation.y,
+                                    apriltag_wrt_world.transform.rotation.z,
+                                    apriltag_wrt_world.transform.rotation.w,
+                                ]
+                            )
 
-                        empty_arr = np.array([0, 0, 0, 1])
-                        empty_arr = np.transpose(empty_arr)
+                            vector_apriltag = np.array(
+                                [
+                                    -apriltag_wrt_camera.transform.translation.x,
+                                    -apriltag_wrt_camera.transform.translation.z,
+                                    0,
+                                ]
+                            )
+                            quaternion_apriltag = np.array(
+                                [
+                                    apriltag_wrt_camera.transform.rotation.x,
+                                    apriltag_wrt_camera.transform.rotation.y,
+                                    apriltag_wrt_camera.transform.rotation.z,
+                                    apriltag_wrt_camera.transform.rotation.w,
+                                ]
+                            )
 
-                        april_tag_pos = np.matmul(april_to_world_mat, empty_arr)
-                        april_to_world = tf.translation_matrix(
-                            [april_tag_pos[0], april_tag_pos[1], 0]
-                        )
+                            euler_apriltag = tf.euler_from_quaternion(
+                                quaternion_apriltag
+                            )
+                            euler_world = tf.euler_from_quaternion(quaternion_world)
+                            new_z_angle = -euler_apriltag[2] + 1.57 - euler_world[2]
+                            quat = tf.quaternion_from_euler(0, 0, new_z_angle)
 
-                        camera_pos_wrt_apriltag = np.matmul(cam_to_april_mat, empty_arr)
-                        full_transform = np.matmul(
-                            april_to_world, camera_pos_wrt_apriltag
-                        )
+                            cur_quat = Quaternion(
+                                x=quat[0], y=quat[1], z=quat[2], w=quat[3]
+                            )
 
-                        pos_x = 256 + full_transform[0] * 85
-                        pos_y = 256 - full_transform[1] * 85
-                        tag_pos_x = 256 + april_tag_pos[0] * 85
-                        tag_pos_y = 256 - april_tag_pos[1] * 85
-                        # self.get_logger().info(f"Transform: {full_transform}")
-                        img = cv.circle(
-                            img, (int(pos_x), int(pos_y)), 10, (0, 0, 255), -1
-                        )
-                        img = cv.circle(
-                            img, (int(tag_pos_x), int(tag_pos_y)), 10, (255, 0, 0), -1
-                        )
+                            # get inverse of apriltag to camera matrix
+                            cam_to_april_mat = np.matmul(
+                                tf.inverse_matrix(
+                                    tf.quaternion_matrix(quaternion_world)
+                                ),
+                                tf.translation_matrix(vector_apriltag),
+                            )
 
-                        cur_pos = Point()
-                        cur_pos.x = full_transform[0]
-                        cur_pos.y = full_transform[1]
-                        cur_pos.z = full_transform[2]
+                            april_to_world_mat = np.matmul(
+                                tf.inverse_matrix(
+                                    tf.quaternion_matrix(quaternion_world)
+                                ),
+                                tf.inverse_matrix(tf.translation_matrix(vector_world)),
+                            )
 
-                        euler_apriltag = tf.euler_from_quaternion(quaternion_apriltag)
-                        euler_world = tf.euler_from_quaternion(quaternion_world)
-                        new_z_angle = -euler_apriltag[2] + 1.57 - euler_world[2]
-                        quat = tf.quaternion_from_euler(0, 0, new_z_angle)
-                        # self.get_logger().info(f"Rotation: {new_z_angle}")
+                            empty_arr = np.array([0, 0, 0, 1])
+                            empty_arr = np.transpose(empty_arr)
 
-                        cur_quat = Quaternion(
-                            x=quat[0], y=quat[1], z=quat[2], w=quat[3]
-                        )
-                        cur_pose = Pose()
-                        cur_pose.position = cur_pos
-                        cur_pose.orientation = cur_quat
-                        self.pose_publisher.publish(cur_pose)
+                            april_tag_pos = np.matmul(april_to_world_mat, empty_arr)
+                            april_to_world = tf.translation_matrix(
+                                [april_tag_pos[0], april_tag_pos[1], 0]
+                            )
+
+                            camera_pos_wrt_apriltag = np.matmul(
+                                cam_to_april_mat, empty_arr
+                            )
+                            if euler_world[2] == -3.14:
+                                camera_pos_wrt_apriltag = np.array(
+                                    [
+                                        -apriltag_wrt_camera.transform.translation.x,
+                                        apriltag_wrt_camera.transform.translation.z,
+                                        0,
+                                        1,
+                                    ]
+                                )
+                                camera_pos_wrt_apriltag = np.transpose(
+                                    camera_pos_wrt_apriltag
+                                )
+                            full_transform = np.matmul(
+                                april_to_world, camera_pos_wrt_apriltag
+                            )
+
+                            pos_x = 256 + full_transform[0] * 85
+                            pos_y = 256 - full_transform[1] * 85
+                            tag_pos_x = 256 + april_tag_pos[0] * 85
+                            tag_pos_y = 256 - april_tag_pos[1] * 85
+                            # self.get_logger().info(f"Transform: {full_transform}")
+                            img = cv.circle(
+                                img, (int(pos_x), int(pos_y)), 10, (0, 0, 255), -1
+                            )
+                            img = cv.circle(
+                                img,
+                                (int(tag_pos_x), int(tag_pos_y)),
+                                10,
+                                (255, 0, 0),
+                                -1,
+                            )
+
+                            cur_pos = Point()
+
+                            # set point
+                            cur_pos.x = full_transform[0]
+                            cur_pos.y = full_transform[1]
+                            cur_pos.z = full_transform[2]
                 except:
-                    pass # self.get_logger().info("Error occured!")
+                    pass  # self.get_logger().info("Error occured!")
+
+        if minimum_dist < 100:
+            cur_pose = Pose()
+
+            # set pose
+            cur_pose.position = cur_pos
+            cur_pose.orientation = cur_quat
+            self.pose_publisher.publish(cur_pose)
         # cv.imshow("Apriltag Pose Estimation", img)
         # cv.waitKey(1)
 

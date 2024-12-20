@@ -1,15 +1,17 @@
 /**:
   ros__parameters:
     tag_family: 'tag36h11'
-    apriltag_ids: ['tag2', 'tag5']
+    apriltag_ids: ['tag1', 'tag2', 'tag3']
     destination_ids: ['kitchen', 'table1', 'table2', 'table3']
 
-    tag2_translation: [3.5, 0.0, 0.0]
-    tag2_rotation: [0.0, 0.0, -1.57]
-    tag5_translation: [5.222, 5.0, 0.0]
-    tag5_rotation: [0.0, 0.0, 0.0]
+    tag1_translation: [0.0, 1.0, 0.0]
+    tag1_rotation: [0.0, 0.0, 1.57]
+    tag2_translation: [0.0, -1.0, 0.0]
+    tag2_rotation: [0.0, 0.0, 3.14]
+    tag3_translation: [2.0, 0.0, 0.0]
+    tag3_rotation: [0.0, 0.0, -1.57]
     
-    kitchen_coords: [0.0, 0.0, 0.0]
-    table1_coords: [3.0, 0.0, 0.0]
+    kitchen_coords: [0.8, 0.8, 0.0]
+    table1_coords: [1.2, 0.3, 0.0]
     table2_coords: [0.0, 5.0, 0.0]
     table3_coords: [2.0, 3.0, 0.0]

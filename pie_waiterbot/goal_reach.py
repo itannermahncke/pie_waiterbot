@@ -108,6 +108,13 @@ class ReachGoalNode(Node):
         Callback function when a button press indicates that the robot has a
         new goal to navigate towards.
         """
+        if goal_id.data == "kitchen":
+            twist = Twist()
+            twist.angular.z = 0.5
+            self.speeds_publisher.publish(twist)
+            time.sleep(7)
+            empty_twist = Twist()
+            self.speeds_publisher.publish(empty_twist)
         self.latest_goal_id = goal_id.data
         self.goal_status_pub.publish(Bool(data=False))
 
@@ -140,22 +147,29 @@ class ReachGoalNode(Node):
             self.get_logger().info(f"Ang error: {ang_error}, lin error: {lin_error}")
 
             # if angle error is significant, correct
-            if abs(ang_error) > self.ang_tol:
-                self.get_logger().info(f"Correcting angular")
-                twist.angular.z = self.max_ang_vel * (ang_error / abs(ang_error))
-                # round(self.directionless_min(ang_error * self.ang_K, self.max_ang_vel), 6)
-                empty = False
-            # if lin error is significant, correct
-            elif lin_error > self.lin_tol:
-                self.get_logger().info(f"Correcting linear")
-                twist.linear.x = round(
-                    self.directionless_min(lin_error * self.lin_K, self.max_lin_vel), 6
-                )
-                empty = False
-            # if within tolerance, stop and change goal state
-            else:
+            if lin_error < self.lin_tol:
                 self.get_logger().info(f"No error!")
                 self.goal_status_pub.publish(Bool(data=True))
+            else:
+                if abs(ang_error) > self.ang_tol:
+                    self.get_logger().info(f"Correcting angular")
+                    twist.angular.z = self.max_ang_vel * (ang_error / abs(ang_error))
+                    # round(self.directionless_min(ang_error * self.ang_K, self.max_ang_vel), 6)
+                    empty = False
+                # if lin error is significant, correct
+                elif lin_error > self.lin_tol:
+                    self.get_logger().info(f"Correcting linear")
+                    twist.linear.x = round(
+                        self.directionless_min(
+                            lin_error * self.lin_K, self.max_lin_vel
+                        ),
+                        6,
+                    )
+                    empty = False
+                # if within tolerance, stop and change goal state
+                else:
+                    self.get_logger().info(f"No error!")
+                    self.goal_status_pub.publish(Bool(data=True))
 
             # publish OR skip if identical to latest
             if not (
